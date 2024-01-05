@@ -1,0 +1,19 @@
+.message-options {
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.hover-options:hover {
+  border: 1px solid #00a884;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.update-text {
+  width: 100%;
+}
+
+.image-message {
+  max-width: 100%;
+}
