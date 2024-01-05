@@ -1,8 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import './App.css';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-// @ts-ignore
-import AvatarImageCropper from 'react-avatar-image-cropper';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {
   faArrowLeft,
@@ -51,18 +49,76 @@ function App() {
 
   const [receiverName, setReceiverName] = useState('Your name');
 
-  const simulateReceivingMessage = (message: Message) => {
-    setReceiverStatus('Typing')
-    receiverTypingSound.play()
-    setTimeout(() => {
-      receiverTypingSound.pause();
-      sendMessage({
-        message: message.message,
-        received: true,
-        imageMessage: message.imageMessage
-      })
-      messageReceived.play();
-      setReceiverStatus('Online')
+  const downloadRecording = () => {
+    const blob = new Blob(recordedChunks, {type: 'video/webm'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recording.webm';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  useEffect(() => {
+    // functions
+    const simulateReceivingMessage = (message: Message) => {
+      setReceiverStatus('Typing')
+      receiverTypingSound.play()
+      setTimeout(() => {
+        receiverTypingSound.pause();
+        sendMessage({
+          message: message.message,
+          received: true,
+          imageMessage: message.imageMessage
+        })
+        messageReceived.play();
+        setReceiverStatus('Online')
+        setCurrentMessageIndex(currentMessageIndex + 1);
+        if (currentMessageIndex === messagesSim.length - 1) {
+          setTimeout(() => {
+            stopRecording();
+            downloadRecording();
+          }, 2000)
+        }
+      }, responseTime)
+    }
+
+    const simulateTypingMessage = (message: Message) => {
+      senderTypingSound.play();
+      let index = 0;
+      const typeChar = () => {
+        if (index < message.message!.length) {
+          input!.textContent = input!.textContent + message.message!.charAt(index);
+          index++;
+          setTimeout(typeChar, typingSpeed);
+        } else {
+          // After a message is complete, wait, then move to the next message
+          setTimeout(() => {
+            senderTypingSound.pause();
+            sendMessage({
+              message: input!.textContent!,
+              received: false,
+              imageMessage: message.imageMessage
+            })
+            input!.textContent = '';
+            messageSent.play();
+            setCurrentMessageIndex(currentMessageIndex + 1);
+            if (currentMessageIndex === messagesSim.length - 1) {
+              setTimeout(() => {
+                stopRecording();
+                downloadRecording();
+              }, 2000)
+            }
+          }, delayBetweenMessages);
+        }
+      };
+      typeChar();
+    }
+
+    const simulateSendingImage = (message: Message) => {
+      senderTypingSound.pause();
+      sendMessage(message)
+      messageSent.play();
       setCurrentMessageIndex(currentMessageIndex + 1);
       if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
@@ -70,68 +126,22 @@ function App() {
           downloadRecording();
         }, 2000)
       }
-    }, responseTime)
-  }
+    }
 
-  const simulateTypingMessage = (message: Message) => {
-    senderTypingSound.play();
-    let index = 0;
-    const typeChar = () => {
-      if (index < message.message!.length) {
-        input!.textContent = input!.textContent + message.message!.charAt(index);
-        index++;
-        setTimeout(typeChar, typingSpeed);
-      } else {
-        // After a message is complete, wait, then move to the next message
+    const simulateRecevingImage = (message: Message) => {
+      senderTypingSound.pause();
+      sendMessage(message)
+      messageSent.play();
+      setCurrentMessageIndex(currentMessageIndex + 1);
+      if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
-          senderTypingSound.pause();
-          sendMessage({
-            message: input!.textContent!,
-            received: false,
-            imageMessage: message.imageMessage
-          })
-          input!.textContent = '';
-          messageSent.play();
-          setCurrentMessageIndex(currentMessageIndex + 1);
-          if (currentMessageIndex === messagesSim.length - 1) {
-            setTimeout(() => {
-              stopRecording();
-              downloadRecording();
-            }, 2000)
-          }
-        }, delayBetweenMessages);
+          stopRecording();
+          downloadRecording();
+        }, 2000)
       }
-    };
-    typeChar();
-  }
-
-  const simulateSendingImage = (message: Message) => {
-    senderTypingSound.pause();
-    sendMessage(message)
-    messageSent.play();
-    setCurrentMessageIndex(currentMessageIndex + 1);
-    if (currentMessageIndex === messagesSim.length - 1) {
-      setTimeout(() => {
-        stopRecording();
-        downloadRecording();
-      }, 2000)
     }
-  }
 
-  const simulateRecevingImage = (message: Message) => {
-    senderTypingSound.pause();
-    sendMessage(message)
-    messageSent.play();
-    setCurrentMessageIndex(currentMessageIndex + 1);
-    if (currentMessageIndex === messagesSim.length - 1) {
-      setTimeout(() => {
-        stopRecording();
-        downloadRecording();
-      }, 2000)
-    }
-  }
-
-  useEffect(() => {
+    // logic
     if (isTyping && currentMessageIndex < messagesSim.length) {
       setTimeout(() => {
         const message = messagesSim[currentMessageIndex];
@@ -150,7 +160,7 @@ function App() {
         }
       }, 1000)
     }
-  }, [isTyping, currentMessageIndex, messagesSim, simulateTypingMessage, simulateReceivingMessage, simulateSendingImage, simulateRecevingImage]);
+  }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
     // @ts-ignore
@@ -196,8 +206,6 @@ function App() {
       messageContainer!.scrollTop = messageContainer!.scrollHeight;
     }
   }
-
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   const chatRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -256,16 +264,6 @@ function App() {
       // @ts-ignore
       canvasStreamRef.current.getTracks().forEach(track => track.stop());
     }
-  };
-
-  const downloadRecording = () => {
-    const blob = new Blob(recordedChunks, {type: 'video/webm'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'recording.webm';
-    a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   const pdpState = useState(false)

@@ -11,14 +11,14 @@ export const PhotoProfilModale: React.FC<{ pdpState: ReactState<boolean>, setPro
 
 
   const [pdpOpen, setPdpOpen] = pdpState;
-  const [profilePictureSrc, setProfilePictureSrc] = setProfilePictureSrcState;
+
   useEffect(() => {
     console.log("state changed", pdpOpen)
   }, [pdpOpen])
 
   const apply = (file: any) => {
     let src = window.URL.createObjectURL(file);
-    setProfilePictureSrc(src)
+    setProfilePictureSrcState[1](src)
     setPdpOpen(false)
   };
 
