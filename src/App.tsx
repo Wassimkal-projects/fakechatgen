@@ -97,7 +97,7 @@ function App() {
         if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
             stopRecording();
-            downloadRecording();
+            // downloadRecording();
           }, 2000)
         }
       }, responseTime)
@@ -126,7 +126,7 @@ function App() {
             if (currentMessageIndex === messagesSim.length - 1) {
               setTimeout(() => {
                 stopRecording();
-                downloadRecording();
+                // downloadRecording();
               }, 2000)
             }
           }, delayBetweenMessages);
@@ -143,7 +143,7 @@ function App() {
       if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
           stopRecording();
-          downloadRecording();
+          // downloadRecording();
         }, 2000)
       }
     }
@@ -156,7 +156,7 @@ function App() {
       if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
           stopRecording();
-          downloadRecording();
+          // downloadRecording();
         }, 2000)
       }
     }
@@ -358,7 +358,7 @@ function App() {
                                 setInputMessage(event.target.value)
                             }/>
                 </div>
-                <div className={"row"}>
+                <div className={"row px-3"}>
                   <button className="col btn btn-primary"
                           onClick={() => {
                             sendMessage({
@@ -384,7 +384,7 @@ function App() {
                   <button className="col btn btn-warning" onClick={() => simulateAllChat()}>Simulate
                   </button>
                 </div>
-                <div className={"row"}>
+                <div className={"row px-3"}>
                   <button className="col btn btn-outline-primary"
                           onClick={startRecording}>Record
                   </button>
