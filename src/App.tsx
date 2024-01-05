@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './App.css';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -46,10 +46,10 @@ function App() {
   const delayBetweenMessages = 1000;
   const responseTime = 2000;
   const endOfMessagesRef = useRef(null);
-
   const [receiverName, setReceiverName] = useState('Your name');
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
 
-  const downloadRecording = () => {
+  const downloadRecording = useCallback(() => {
     const blob = new Blob(recordedChunks, {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -57,7 +57,27 @@ function App() {
     a.download = 'recording.webm';
     a.click();
     window.URL.revokeObjectURL(url);
-  };
+  }, [recordedChunks]);
+
+  const sendMessage = useCallback((message: Message) => {
+    console.log("here ?", message.imageMessage)
+    let messageContainer = document.getElementById('chatMessages');
+
+    let newMessage = {received: message.received} as Message;
+
+    if (message.message) {
+      newMessage.message = message.message;
+    }
+    if (message.imageMessage) {
+      newMessage.imageMessage = message.imageMessage;
+    }
+    if (message.message || message.imageMessage) {
+      setMessages([...messages, newMessage])
+      // @ts-ignore
+      setInputMessage('')
+      messageContainer!.scrollTop = messageContainer!.scrollHeight;
+    }
+  }, [messages])
 
   useEffect(() => {
     // functions
@@ -160,6 +180,7 @@ function App() {
         }
       }, 1000)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
@@ -187,30 +208,10 @@ function App() {
     }
   };
 
-  function sendMessage(message: Message) {
-    console.log("here ?", message.imageMessage)
-    let messageContainer = document.getElementById('chatMessages');
-
-    let newMessage = {received: message.received} as Message;
-
-    if (message.message) {
-      newMessage.message = message.message;
-    }
-    if (message.imageMessage) {
-      newMessage.imageMessage = message.imageMessage;
-    }
-    if (message.message || message.imageMessage) {
-      setMessages([...messages, newMessage])
-      // @ts-ignore
-      setInputMessage('')
-      messageContainer!.scrollTop = messageContainer!.scrollHeight;
-    }
-  }
 
   const chatRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const canvasStreamRef = useRef(null);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
 
   const startRecording = () => {
@@ -292,29 +293,26 @@ function App() {
       case MessageActions.DELETE:
         setMessages(messages.filter(message => message !== messages[index]));
         break;
-      case MessageActions.DOWN: {
+      case MessageActions.DOWN:
         if (messages.length <= 1 || index === messages.length - 1) return;
         setMessageOptionsDisplayed({
           index: index + 1,
           display: true
         })
         setMessages(swapElements(index, index + 1))
-      }
         break;
-      case MessageActions.UP: {
+      case MessageActions.UP:
         if (messages.length <= 1 || index === 0) return;
         setMessageOptionsDisplayed({
           index: index - 1,
           display: true
         })
         setMessages(swapElements(index, index - 1))
-      }
         break;
       case MessageActions.LEFT:
-      case MessageActions.RIGHT: {
+      case MessageActions.RIGHT:
         messages[index].received = !messages[index].received
         setMessages(messages)
-      }
         break;
     }
   }
