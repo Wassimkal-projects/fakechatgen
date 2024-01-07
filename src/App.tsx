@@ -33,6 +33,7 @@ function App() {
 
   const input = document.getElementById('messageInput');
 
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesSim, setMessagesSim] = useState<Message[]>([]);
 
@@ -48,8 +49,10 @@ function App() {
   const endOfMessagesRef = useRef(null);
   const [receiverName, setReceiverName] = useState('Your name');
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [simulateMessageOn, setSimulateMessageOn] = useState(false)
 
-  const downloadRecording = useCallback(() => {
+  const downloadRecording = () => {
+    console.log("starting download")
     const blob = new Blob(recordedChunks, {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -57,10 +60,9 @@ function App() {
     a.download = 'recording.webm';
     a.click();
     window.URL.revokeObjectURL(url);
-  }, [recordedChunks]);
+  };
 
   const sendMessage = useCallback((message: Message) => {
-    console.log("here ?", message.imageMessage)
     let messageContainer = document.getElementById('chatMessages');
 
     let newMessage = {received: message.received} as Message;
@@ -96,8 +98,8 @@ function App() {
         setCurrentMessageIndex(currentMessageIndex + 1);
         if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
+            setSimulateMessageOn(false)
             stopRecording();
-            // downloadRecording();
           }, 2000)
         }
       }, responseTime)
@@ -125,8 +127,8 @@ function App() {
             setCurrentMessageIndex(currentMessageIndex + 1);
             if (currentMessageIndex === messagesSim.length - 1) {
               setTimeout(() => {
+                setSimulateMessageOn(false)
                 stopRecording();
-                // downloadRecording();
               }, 2000)
             }
           }, delayBetweenMessages);
@@ -142,8 +144,8 @@ function App() {
       setCurrentMessageIndex(currentMessageIndex + 1);
       if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
+          setSimulateMessageOn(false)
           stopRecording();
-          // downloadRecording();
         }, 2000)
       }
     }
@@ -155,13 +157,12 @@ function App() {
       setCurrentMessageIndex(currentMessageIndex + 1);
       if (currentMessageIndex === messagesSim.length - 1) {
         setTimeout(() => {
+          setSimulateMessageOn(false)
           stopRecording();
-          // downloadRecording();
         }, 2000)
       }
     }
 
-    // logic
     if (isTyping && currentMessageIndex < messagesSim.length) {
       setTimeout(() => {
         const message = messagesSim[currentMessageIndex];
@@ -184,10 +185,10 @@ function App() {
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
+    console.log("here ?")
     // @ts-ignore
     endOfMessagesRef.current?.scrollIntoView({behavior: "smooth"});
   }, [messages]); // Dependency array includes messages, so effect runs when messages update
-
 
   useEffect(() => {
     if (currentMessageIndex >= messagesSim.length) {
@@ -196,7 +197,11 @@ function App() {
   }, [currentMessageIndex, messagesSim]);
 
   const simulateAllChat = () => {
+    if (messages.length < 1) return;
+
     // TODO hide all options
+    setSimulateMessageOn(true)
+
     setMessagesSim(
         messages.map(message => message)
     )
@@ -215,6 +220,7 @@ function App() {
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
 
   const startRecording = () => {
+    setRecordedChunks([])
     simulateAllChat();
 
     const canvas = document.createElement('canvas');
@@ -230,6 +236,7 @@ function App() {
     mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
       mimeType: 'video/webm'
     });
+
     // @ts-ignore
     mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
       if (event.data.size > 0) {
@@ -248,11 +255,13 @@ function App() {
       return;
     }
     // @ts-ignore
-    html2canvas(chatRef.current!, {scale: 2}).then(capturedCanvas => {
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-      requestAnimationFrame(() => captureFrame(canvas));
-    });
+    if (chatRef.current) {
+      html2canvas(chatRef.current!, {scale: 2}).then(capturedCanvas => {
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+        requestAnimationFrame(() => captureFrame(canvas));
+      });
+    }
   };
 
   const stopRecording = () => {
@@ -265,6 +274,8 @@ function App() {
       // @ts-ignore
       canvasStreamRef.current.getTracks().forEach(track => track.stop());
     }
+
+
   };
 
   const pdpState = useState(false)
@@ -318,166 +329,174 @@ function App() {
   }
 
   return (
-      <div className={"container-fluid main-page"}>
-        <div className="row">
-          <PhotoProfilModale pdpState={pdpState}
-                             setProfilePictureSrcState={setProfilePictureSrcState}/>
-          <div className="col-lg-6 mb-5">
-            <div>
-              <div className="input-group input-group-sm">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="inputGroup-sizing-sm">Name</span>
-                </div>
-                <input type="text" className="form-control" aria-label="Small" value={receiverName}
-                       aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
-                    setReceiverName(event.target.value)
-                }/>
-              </div>
-              <div className="input-group input-group-sm">
-                <div className="input-group-prepend">
-                  <span className="input-group-text" id="inputGroup-sizing-sm">Status</span>
-                </div>
-                <input type="text" className="form-control" aria-label="Small"
-                       value={receiverStatus}
-                       aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
-                    setReceiverStatus(event.target.value)
-                }/>
-              </div>
-              {/*<AvatarImageCropper className={"avatar-style"} apply={apply}/>*/}
-              <div className={"messages-input"}>
-                <div className="input-group">
+      <>
+        <div className={"container-fluid main-page"}>
+          <div className="row">
+            <PhotoProfilModale pdpState={pdpState}
+                               setProfilePictureSrcState={setProfilePictureSrcState}/>
+            <div className="col-lg-6 mb-5">
+              <div>
+                <div className="input-group input-group-sm">
                   <div className="input-group-prepend">
-                    <span className="input-group-text">Add to conversation</span>
+                    <span className="input-group-text" id="inputGroup-sizing-sm">Name</span>
+                  </div>
+                  <input type="text" className="form-control" aria-label="Small"
+                         value={receiverName}
+                         aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
+                      setReceiverName(event.target.value)
+                  }/>
+                </div>
+                <div className="input-group input-group-sm">
+                  <div className="input-group-prepend">
+                    <span className="input-group-text" id="inputGroup-sizing-sm">Status</span>
+                  </div>
+                  <input type="text" className="form-control" aria-label="Small"
+                         value={receiverStatus}
+                         aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
+                      setReceiverStatus(event.target.value)
+                  }/>
+                </div>
+                {/*<AvatarImageCropper className={"avatar-style"} apply={apply}/>*/}
+                <div className={"messages-input"}>
+                  <div className="input-group">
+                    <div className="input-group-prepend">
+                      <span className="input-group-text">Add to conversation</span>
+
+                    </div>
+                    <textarea value={inputMessage} className="form-control"
+                              aria-label="With textarea"
+                              onChange={(event) =>
+                                  setInputMessage(event.target.value)
+                              }/>
+                  </div>
+                  <div>
                     <ImageUpload setImageMessageState={[imageMessage, setImageMessage]}/>
                     {imageMessage &&
                         <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>}
-
                   </div>
-                  <textarea value={inputMessage} className="form-control" aria-label="With textarea"
-                            onChange={(event) =>
-                                setInputMessage(event.target.value)
-                            }/>
-                </div>
-                <div className={"row px-3"}>
-                  <button className="col btn btn-primary"
-                          onClick={() => {
-                            sendMessage({
-                              message: inputMessage,
-                              received: false,
-                              imageMessage: imageMessage
-                            })
-                            setImageMessage(undefined)
-                          }}>send
-                  </button>
-                  <button className="col btn btn-outline-primary"
-                          onClick={() => {
-                            sendMessage({
-                              message: inputMessage,
-                              received: true,
-                              imageMessage: imageMessage
-                            })
-                            setImageMessage(undefined)
-                          }}>receive
-                  </button>
-                  <button className="col btn btn-danger" onClick={() => setMessages([])}>Clear
-                  </button>
-                  <button className="col btn btn-warning" onClick={() => simulateAllChat()}>Simulate
-                  </button>
-                </div>
-                <div className={"row px-3"}>
-                  <button className="col btn btn-outline-primary"
-                          onClick={startRecording}>Record
-                  </button>
-                  <button className="col btn btn-outline-primary"
-                          onClick={() => stopRecording()}>En recording
-                  </button>
-                  <button className="col btn btn-danger"
-                          onClick={() => downloadRecording()}>Download
-                  </button>
+                  <div className={"row px-3"}>
+                    <button className="col btn btn-primary"
+                            onClick={() => {
+                              sendMessage({
+                                message: inputMessage,
+                                received: false,
+                                imageMessage: imageMessage
+                              })
+                              setImageMessage(undefined)
+                            }}>send
+                    </button>
+                    <button className="col btn btn-outline-primary"
+                            onClick={() => {
+                              sendMessage({
+                                message: inputMessage,
+                                received: true,
+                                imageMessage: imageMessage
+                              })
+                              setImageMessage(undefined)
+                            }}>receive
+                    </button>
+                    <button className="col btn btn-danger" onClick={() => setMessages([])}>Clear
+                    </button>
+                    <button disabled={simulateMessageOn} className="col btn btn-warning"
+                            onClick={() => simulateAllChat()}>Simulate
+                    </button>
+                  </div>
+                  <div className={"row px-3"}>
+                    <button className="col btn btn-outline-primary"
+                            onClick={startRecording}>Record
+                    </button>
+                    <button className="col btn btn-outline-primary"
+                            onClick={() => stopRecording()}>En recording
+                    </button>
+                    <button className="col btn btn-danger"
+                            onClick={() => downloadRecording()}>Download
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="col-lg-6">
-            <div ref={chatRef} className="chat-container">
-              <div className="phone-top-bar">
-                <span className="time">09:41 am</span>
-                <span className="network-status">
+            <div className="col-lg-6">
+              <div ref={chatRef} className="chat-container">
+                <div className="phone-top-bar">
+                  <span className="time">09:41 am</span>
+                  <span className="network-status">
               <span>H+</span>
             <FontAwesomeIcon icon={faSignal}/>
               <span>50%</span>
             <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
 
-              </div>
-              <div className="whatsapp-header">
-                <div className="pic-and-name">
+                </div>
+                <div className="whatsapp-header">
+                  <div className="pic-and-name">
                   <span className={"whatsapp-actions center-icon"}>
                   <FontAwesomeIcon icon={faArrowLeft}/>
                   </span>
-                  <img className="profile-pic" src={setProfilePictureSrcState[0]} alt=""
-                       onClick={() => pdpState[1](true)}/>
-                  <div className="name-and-status">
-                    <span className={"name-text"}>{receiverName}</span>
-                    <span className={"status-text"}>{receiverStatus}</span>
+                    <img className="profile-pic" src={setProfilePictureSrcState[0]} alt=""
+                         onClick={() => pdpState[1](true)}/>
+                    <div className="name-and-status">
+                      <span className={"name-text"}>{receiverName}</span>
+                      <span className={"status-text"}>{receiverStatus}</span>
+                    </div>
                   </div>
-                </div>
-                <span className="whatsapp-actions">
+                  <span className="whatsapp-actions">
                   <button><FontAwesomeIcon
                       icon={faVideoCamera}/></button>
                   <button><FontAwesomeIcon icon={faPhone}/></button>
                   <button><FontAwesomeIcon icon={faEllipsisV}/></button>
                 </span>
-              </div>
-              <div className="chat-messages" id="chatMessages">
-                {messages.map((message, index) => {
-                  return (
-                      <MessageComponent
-                          message={message.message}
-                          received={message.received}
-                          imageMessage={message.imageMessage}
-                          index={index}
-                          updateMessage={(action, message) => updateMessage(action, index, message)}
-                          messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}/>
-                  )
-                })}
-                <div ref={endOfMessagesRef}/>
-                {/* Invisible element at the bottom */}
-              </div>
-              {<div className="message-bar">
-                <div className="message-input">
-                  <div className={"emoji-container"}>
-                    <span className={"icon-emoji center-icon"}/>
-                  </div>
-                  <div id="messageInput"
-                       className={"editable-div"}
-                       contentEditable="true"
-                       role="textbox"
-                       aria-multiline="false"
-                  />
-                  <div className={"right-input"}>
-                    <div className={"emoji-container"}>
-                      <span className={"icon-clip center-icon"}/>
-                    </div>
-                    <div className={"emoji-container"}>
-                      <span className={"icon-camera center-icon"}/>
-                    </div>
-                  </div>
                 </div>
-                <span className={"whatsapp-actions"}>
+                <div className="chat-messages" id="chatMessages">
+                  {messages.map((message, index) => {
+                    return (
+                        <MessageComponent
+                            key={index}
+                            index={index}
+                            message={message.message}
+                            received={message.received}
+                            imageMessage={message.imageMessage}
+                            updateMessage={(action, message) => updateMessage(action, index, message)}
+                            messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
+                            simulateMessageOn={simulateMessageOn}/>
+                    )
+                  })}
+                  <div ref={endOfMessagesRef}/>
+                  {/* Invisible element at the bottom */}
+                </div>
+                {<div className="message-bar">
+                  <div className="message-input">
+                    <div className={"emoji-container"}>
+                      <span className={"icon-emoji center-icon"}/>
+                    </div>
+                    <div id="messageInput"
+                         className={"editable-div"}
+                         contentEditable="true"
+                         role="textbox"
+                         aria-multiline="false"
+                    />
+                    <div className={"right-input"}>
+                      <div className={"emoji-container"}>
+                        <span className={"icon-clip center-icon"}/>
+                      </div>
+                      <div className={"emoji-container"}>
+                        <span className={"icon-camera center-icon"}/>
+                      </div>
+                    </div>
+                  </div>
+                  <span className={"whatsapp-actions"}>
                   <div className={"emoji-container"}>
                   <span className={"icon-microphone center-icon"}/>
                   </div>
                   </span>
 
 
-              </div>}
+                </div>}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </>
   )
-      ;
 }
 
 export default App;

@@ -20,15 +20,32 @@ export const MessageComponent: React.FC<{
   imageMessage?: string,
   index: number,
   updateMessage: (action: MessageActions, message?: string) => void,
-  messageDisplayedState: ReactState<MessageDisplayed>
-}> = ({message, received, index, updateMessage, messageDisplayedState, imageMessage}) => {
+  messageDisplayedState: ReactState<MessageDisplayed>,
+  simulateMessageOn: boolean
+}> = ({
+        message,
+        received,
+        index,
+        updateMessage,
+        messageDisplayedState,
+        imageMessage,
+        simulateMessageOn
+      }) => {
 
   const [isReceived, setIsReceived] = useState(received)
   const [textMessage, setTextMessage] = useState(message)
-
   const [updateMessageArea, setUpdateMessageArea] = useState(false)
   const [messageDisplayed, setMessageDisplayed] = messageDisplayedState
 
+  useEffect(() => {
+        if (simulateMessageOn) {
+          setMessageDisplayed({
+            display: false,
+            index: index
+          })
+        }
+      },
+      [index, setMessageDisplayed, simulateMessageOn])
   const toogleOptionsDisplayed = () => {
     setMessageDisplayed({
       display: (!(index === messageDisplayed.index && messageDisplayed.display)),
@@ -56,7 +73,7 @@ export const MessageComponent: React.FC<{
   }
 
   return (
-      <>
+      <div>
         {!isReceived ? (
             <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
           <span className={"message-tail"}>
@@ -85,7 +102,6 @@ export const MessageComponent: React.FC<{
                 )}
               </div>
             </div>
-
         ) : (
             <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
               <div className={"message-received hover-options"} key={`message-${index}`}>
@@ -153,6 +169,6 @@ export const MessageComponent: React.FC<{
                 </div>
               </div>
             </div>)}
-      </>
+      </div>
   )
 }

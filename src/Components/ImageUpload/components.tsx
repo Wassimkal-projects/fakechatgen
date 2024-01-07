@@ -7,16 +7,12 @@ export const ImageUpload: React.FC<{
 
   const [inputKey, setInputKey] = useState(Date.now());
   useEffect(() => {
-    console.log("I think it's here ?")
     setInputKey(Date.now())
   }, [setImageMessageState])
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
     if (file && file.type.substr(0, 5) === 'image') {
-      // setImage(file);
       setImageMessageState[1](URL.createObjectURL(file))
-    } else {
-      // setImage(null);
     }
   };
 
