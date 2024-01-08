@@ -97,7 +97,8 @@ export const MessageComponent: React.FC<{
                 {imageMessage && (
                     <>
                       {textMessage && <br/>}
-                      <img className={"image-message"} src={imageMessage} alt={""}/>
+                      <img className={"image-message"} src={imageMessage} alt="New message"
+                           crossOrigin="anonymous"/>
                     </>
                 )}
               </div>
@@ -109,7 +110,8 @@ export const MessageComponent: React.FC<{
                 {imageMessage && (
                     <>
                       {textMessage && <br/>}
-                      <img className={"image-message"} src={imageMessage} alt={""}/>
+                      <img className={"image-message"} src={imageMessage} alt={""}
+                           crossOrigin="anonymous"/>
                     </>
                 )}
               </div>

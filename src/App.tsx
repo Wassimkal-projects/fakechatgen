@@ -1,15 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './App.css';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {
-  faArrowLeft,
-  faBatteryHalf,
-  faEllipsisV,
-  faPhone,
-  faSignal,
-  faVideoCamera
-} from "@fortawesome/free-solid-svg-icons";
 
 // @ts-ignore
 import html2canvas from "html2canvas";
@@ -18,6 +9,15 @@ import {MessageComponent} from "./Components/MessageComponent/component";
 import {MessageActions} from "./enums/enums";
 import {Message, MessageDisplayed} from "./utils/types/types";
 import {ImageUpload} from "./Components/ImageUpload/components";
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+  faArrowLeft,
+  faBatteryHalf,
+  faEllipsisV,
+  faPhone,
+  faSignal,
+  faVideoCamera
+} from "@fortawesome/free-solid-svg-icons";
 
 function App() {
   const senderTypingSound = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
@@ -39,7 +39,7 @@ function App() {
 
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
-  const setProfilePictureSrcState = useState('')
+  const setProfilePictureSrcState = useState<string>(require("./img/avatar.png"))
 
   const [isTyping, setIsTyping] = useState<boolean>(false);
 
@@ -254,9 +254,8 @@ function App() {
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
     }
-    // @ts-ignore
     if (chatRef.current) {
-      html2canvas(chatRef.current!, {scale: 2}).then(capturedCanvas => {
+      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then(capturedCanvas => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(() => captureFrame(canvas));
@@ -421,9 +420,9 @@ function App() {
                   <span className="time">09:41 am</span>
                   <span className="network-status">
               <span>H+</span>
-            <FontAwesomeIcon icon={faSignal}/>
-              <span>50%</span>
-            <FontAwesomeIcon icon={faBatteryHalf}/>
+                    <FontAwesomeIcon icon={faSignal}/>
+                    <span>50%</span>
+                    <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
 
                 </div>
@@ -432,7 +431,8 @@ function App() {
                   <span className={"whatsapp-actions center-icon"}>
                   <FontAwesomeIcon icon={faArrowLeft}/>
                   </span>
-                    <img className="profile-pic" src={setProfilePictureSrcState[0]} alt=""
+                    <img className="profile-pic" src={setProfilePictureSrcState[0]}
+                         alt="alt-profile" crossOrigin="anonymous"
                          onClick={() => pdpState[1](true)}/>
                     <div className="name-and-status">
                       <span className={"name-text"}>{receiverName}</span>
@@ -461,7 +461,6 @@ function App() {
                     )
                   })}
                   <div ref={endOfMessagesRef}/>
-                  {/* Invisible element at the bottom */}
                 </div>
                 {<div className="message-bar">
                   <div className="message-input">
