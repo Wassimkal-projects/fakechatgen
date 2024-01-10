@@ -1,3 +1,41 @@
+.message {
+  padding: 5px 10px;
+  border-radius: 0 10px 10px;
+  background-color: white;
+  max-width: 70%;
+  min-width: 40%;
+  display: table;
+  margin: 1px 0 5px 0;
+}
+
+.message.sent {
+  background-color: #DCF8C6;
+  margin-left: auto;
+}
+
+.message.received {
+  background-color: #FFFFFF;
+  margin-right: auto;
+}
+
+.message-status-time {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.msg-status {
+  margin-left: 3px;
+}
+
+.msg-time {
+  color: rgba(0, 0, 0, .45);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
 .message-options {
   border: 1px solid #cccccc;
   border-radius: 5px;

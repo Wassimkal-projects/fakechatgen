@@ -23,15 +23,6 @@ body {
   background-image: url("img/whatsapp_bg_light.jpg");
 }
 
-.message {
-  padding: 5px 10px;
-  border-radius: 0 10px 10px;
-  background-color: white;
-  max-width: 70%;
-  display: table;
-  margin: 1px 0 5px 0;
-}
-
 .message-received {
   padding: 5px 10px;
   border-radius: 0 10px 10px;
@@ -53,16 +44,6 @@ body {
   max-width: 70%;
   display: table;
   margin: 1.2px 0 0 auto;
-}
-
-.message.sent {
-  background-color: #DCF8C6;
-  margin-left: auto;
-}
-
-.message.received {
-  background-color: #FFFFFF;
-  margin-right: auto;
 }
 
 .message-bar {

@@ -52,7 +52,6 @@ function App() {
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
 
   const downloadRecording = () => {
-    console.log("starting download")
     const blob = new Blob(recordedChunks, {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -114,9 +113,11 @@ function App() {
           index++;
           setTimeout(typeChar, typingSpeed);
         } else {
-          // After a message is complete, wait, then move to the next message
+          // End sound after a message is complete
+          senderTypingSound.pause();
+
+          // Wait, then move to the next message
           setTimeout(() => {
-            senderTypingSound.pause();
             sendMessage({
               message: input!.textContent!,
               received: false,
@@ -185,7 +186,6 @@ function App() {
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
-    console.log("here ?")
     // @ts-ignore
     endOfMessagesRef.current?.scrollIntoView({behavior: "smooth"});
   }, [messages]); // Dependency array includes messages, so effect runs when messages update
@@ -246,17 +246,28 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.start();
-    requestAnimationFrame(() => captureFrame(canvas));
+    requestAnimationFrame(() => captureFrame(scaleCanvasImage(canvas)));
   };
 
-  const captureFrame = (canvas: any) => {
+  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
+    const scaleBy = 6;
+    const w = canvas.width;
+    const h = canvas.height;
+    canvas.width = canvas.width * scaleBy;
+    canvas.height = canvas.height * scaleBy;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    return canvas;
+  }
+  const captureFrame = (canvas: HTMLCanvasElement) => {
     // @ts-ignore
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
     }
     if (chatRef.current) {
       html2canvas(chatRef.current, {scale: 2, useCORS: true}).then(capturedCanvas => {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d')!;
+        ctx.imageSmoothingQuality = "high"
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
         requestAnimationFrame(() => captureFrame(canvas));
       });
@@ -292,19 +303,20 @@ function App() {
       return newArray;
     };
 
+    const updatedMessages = [...messages]
     switch (action) {
       case MessageActions.UPDATE:
-        messages[index] = {
+        updatedMessages[index] = {
           message: message!,
-          received: messages[index].received
+          received: updatedMessages[index].received
         }
-        setMessages(messages)
+        setMessages(updatedMessages)
         break;
       case MessageActions.DELETE:
-        setMessages(messages.filter(message => message !== messages[index]));
+        setMessages(updatedMessages.filter(message => message !== updatedMessages[index]));
         break;
       case MessageActions.DOWN:
-        if (messages.length <= 1 || index === messages.length - 1) return;
+        if (updatedMessages.length <= 1 || index === updatedMessages.length - 1) return;
         setMessageOptionsDisplayed({
           index: index + 1,
           display: true
@@ -312,7 +324,7 @@ function App() {
         setMessages(swapElements(index, index + 1))
         break;
       case MessageActions.UP:
-        if (messages.length <= 1 || index === 0) return;
+        if (updatedMessages.length <= 1 || index === 0) return;
         setMessageOptionsDisplayed({
           index: index - 1,
           display: true
@@ -321,8 +333,8 @@ function App() {
         break;
       case MessageActions.LEFT:
       case MessageActions.RIGHT:
-        messages[index].received = !messages[index].received
-        setMessages(messages)
+        updatedMessages[index].received = !updatedMessages[index].received
+        setMessages(updatedMessages)
         break;
     }
   }
@@ -407,7 +419,7 @@ function App() {
                     <button className="col btn btn-outline-primary"
                             onClick={() => stopRecording()}>En recording
                     </button>
-                    <button className="col btn btn-danger"
+                    <button className="col btn btn-danger" disabled={simulateMessageOn}
                             onClick={() => downloadRecording()}>Download
                     </button>
                   </div>
