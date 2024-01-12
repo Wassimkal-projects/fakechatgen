@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import {Nav, Tab} from 'react-bootstrap';
 
 // @ts-ignore
 import html2canvas from "html2canvas";
@@ -8,12 +9,12 @@ import {PhotoProfilModale} from "./Components/PhotoProfilModale/component";
 import {MessageComponent} from "./Components/MessageComponent/component";
 import {MessageActions} from "./enums/enums";
 import {Message, MessageDisplayed} from "./utils/types/types";
-import {ImageUpload} from "./Components/ImageUpload/components";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
   faBatteryHalf,
   faEllipsisV,
+  faImage,
   faPhone,
   faSignal,
   faVideoCamera
@@ -47,11 +48,24 @@ function App() {
   const delayBetweenMessages = 1000;
   const responseTime = 2000;
   const endOfMessagesRef = useRef(null);
-  const [receiverName, setReceiverName] = useState('Your name');
+  const [receiverName, setReceiverName] = useState('John Doe');
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
+  const [inputKey, setInputKey] = useState(Date.now());
+  const chatRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const canvasStreamRef = useRef(null);
+  const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
+
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setInputKey(Date.now())
+  }, [imageMessage])
+
 
   const downloadRecording = () => {
+    console.log(recordedChunks.length)
     const blob = new Blob(recordedChunks, {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -214,11 +228,6 @@ function App() {
   };
 
 
-  const chatRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const canvasStreamRef = useRef(null);
-  const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
-
   const startRecording = () => {
     setRecordedChunks([])
     simulateAllChat();
@@ -284,8 +293,6 @@ function App() {
       // @ts-ignore
       canvasStreamRef.current.getTracks().forEach(track => track.stop());
     }
-
-
   };
 
   const pdpState = useState(false)
@@ -339,94 +346,232 @@ function App() {
     }
   }
 
+  const handleImageChange = (e: any) => {
+    const file = e.target.files[0];
+    if (file && file.type.substr(0, 5) === 'image') {
+      setImageMessage(URL.createObjectURL(file))
+    }
+  };
+
+  const handleUploadImage = () => {
+    imageInputRef.current!.click();
+  }
+
   return (
       <>
         <div className={"container-fluid main-page"}>
           <div className="row">
             <PhotoProfilModale pdpState={pdpState}
                                setProfilePictureSrcState={setProfilePictureSrcState}/>
-            <div className="col-lg-6 mb-5">
-              <div>
-                <div className="input-group input-group-sm">
-                  <div className="input-group-prepend">
-                    <span className="input-group-text" id="inputGroup-sizing-sm">Name</span>
-                  </div>
-                  <input type="text" className="form-control" aria-label="Small"
+            <div className="col mb-5">
+              <div className={"left-container"}>
+                <div className={"form-floating"}>
+                  {/*                  <div className="input-group-prepend">
+                    <span className="input-group-text"
+                          id="inputGroup-sizing-sm">Receiver's name</span>
+                  </div>*/}
+                  <input type="text"
+                         className="form-control"
+                         placeholder="Receiver's name"
+                         id="receiversNameFormControl"
                          value={receiverName}
-                         aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
-                      setReceiverName(event.target.value)
-                  }/>
+                         onChange={(event) =>
+                             setReceiverName(event.target.value)
+                         }/>
+                  <label htmlFor="receiversNameFormControl">
+                    Receiver's name
+                  </label>
                 </div>
-                <div className="input-group input-group-sm">
-                  <div className="input-group-prepend">
-                    <span className="input-group-text" id="inputGroup-sizing-sm">Status</span>
-                  </div>
-                  <input type="text" className="form-control" aria-label="Small"
-                         value={receiverStatus}
-                         aria-describedby="inputGroup-sizing-sm" onChange={(event) =>
-                      setReceiverStatus(event.target.value)
-                  }/>
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" id="flexSwitchCheckChecked"
+                         checked/>
+                  <label className="form-check-label" htmlFor="flexSwitchCheckChecked">Checked
+                    Show header</label>
                 </div>
-                {/*<AvatarImageCropper className={"avatar-style"} apply={apply}/>*/}
-                <div className={"messages-input"}>
-                  <div className="input-group">
-                    <div className="input-group-prepend">
-                      <span className="input-group-text">Add to conversation</span>
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" id="flexSwitchCheckChecked"
+                         checked/>
+                  <label className="form-check-label" htmlFor="flexSwitchCheckChecked">Checked
+                    Show percentage</label>
+                </div>
+                <select className="form-select" aria-label="Default select example">
+                  <option selected>Network</option>
+                  <option value="1">5G</option>
+                  <option value="2">4G</option>
+                  <option value="3">LTE</option>
+                </select>
+                <div className={"form-floating"}>
+                  <input type="text"
+                         className="form-control"
+                         placeholder="Time"
+                         id="timeFormControl"
+                  />
+                  <label htmlFor="timeFormControl">
+                    Time
+                  </label>
+                </div>
+                <Tab.Container id="left-tabs-example" defaultActiveKey="person1">
+                  <Nav variant="tabs" className="mb-3">
+                    <Nav.Item>
+                      <Nav.Link eventKey="person1">Person 1</Nav.Link>
+                    </Nav.Item>
+                    <Nav.Item>
+                      <Nav.Link eventKey="person2">Person 2</Nav.Link>
+                    </Nav.Item>
+                  </Nav>
+                  <Tab.Content>
+                    <Tab.Pane eventKey="person1">
+                      <div className="form-floating">
+                        {imageMessage &&
+                            <div className={"image-preview"}>
+                              <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>
+                            </div>}
+                        <textarea value={inputMessage}
+                                  id="floatingTextarea"
+                                  className="form-control"
+                                  onChange={(event) =>
+                                      setInputMessage(event.target.value)
+                                  }/>
+                        <label htmlFor="floatingTextarea">Message</label>
 
-                    </div>
-                    <textarea value={inputMessage} className="form-control"
-                              aria-label="With textarea"
-                              onChange={(event) =>
-                                  setInputMessage(event.target.value)
-                              }/>
-                  </div>
-                  <div>
-                    <ImageUpload setImageMessageState={[imageMessage, setImageMessage]}/>
-                    {imageMessage &&
-                        <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>}
-                  </div>
-                  <div className={"row px-3"}>
-                    <button className="col btn btn-primary"
-                            onClick={() => {
-                              sendMessage({
-                                message: inputMessage,
-                                received: false,
-                                imageMessage: imageMessage
-                              })
-                              setImageMessage(undefined)
-                            }}>send
-                    </button>
-                    <button className="col btn btn-outline-primary"
-                            onClick={() => {
-                              sendMessage({
-                                message: inputMessage,
-                                received: true,
-                                imageMessage: imageMessage
-                              })
-                              setImageMessage(undefined)
-                            }}>receive
-                    </button>
-                    <button className="col btn btn-danger" onClick={() => setMessages([])}>Clear
-                    </button>
-                    <button disabled={simulateMessageOn} className="col btn btn-warning"
-                            onClick={() => simulateAllChat()}>Simulate
-                    </button>
-                  </div>
-                  <div className={"row px-3"}>
-                    <button className="col btn btn-outline-primary"
-                            onClick={startRecording}>Record
-                    </button>
-                    <button className="col btn btn-outline-primary"
-                            onClick={() => stopRecording()}>En recording
-                    </button>
-                    <button className="col btn btn-danger" disabled={simulateMessageOn}
-                            onClick={() => downloadRecording()}>Download
-                    </button>
-                  </div>
-                </div>
+                        <label className="image-upload">
+                          <input className={"image-upload"} ref={imageInputRef} type="file"
+                                 accept="image/*" key={inputKey}
+                                 onChange={handleImageChange}/>
+                        </label>
+                        <button className="inside-button" onClick={() => handleUploadImage()}>
+                          <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
+                          />
+                        </button>
+
+                      </div>
+                      <div>
+                        <div className="row">
+                          <div className="col">
+                            <div className="form-check">
+                              <input className="form-check-input" type="radio"
+                                     name="flexRadioDefault"
+                                     id="flexRadioDefault1" checked/>
+                              <label className="form-check-label" htmlFor="flexRadioDefault1">
+                                Sending
+                              </label>
+                            </div>
+                          </div>
+                          <div className="col">
+                            <div className="form-check">
+                              <input className="form-check-input" type="radio"
+                                     name="flexRadioDefault"
+                                     id="flexRadioDefault1"/>
+                              <label className="form-check-label" htmlFor="flexRadioDefault1">
+                                Sent
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="row">
+                          <div className="col">
+                            <div className="form-check">
+                              <input className="form-check-input" type="radio"
+                                     name="flexRadioDefault"
+                                     id="flexRadioDefault1"/>
+                              <label className="form-check-label" htmlFor="flexRadioDefault1">
+                                Delivered
+                              </label>
+                            </div>
+                          </div>
+                          <div className="col">
+                            <div className="form-check">
+                              <input className="form-check-input" type="radio"
+                                     name="flexRadioDefault"
+                                     id="flexRadioDefault1"/>
+                              <label className="form-check-label" htmlFor="flexRadioDefault1">
+                                Seen
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={"messages-input"}>
+                        <br/>
+                        <div className={"row px-3"}>
+                          <button className="col btn btn-primary"
+                                  onClick={() => {
+                                    sendMessage({
+                                      message: inputMessage,
+                                      received: false,
+                                      imageMessage: imageMessage
+                                    })
+                                    setImageMessage(undefined)
+                                  }}>Add to conversation
+                          </button>
+                        </div>
+                        <br/>
+                        <div className={"row px-3"}>
+                          <button className="col btn btn-danger"
+                                  onClick={() => setMessages([])}>Clear
+                          </button>
+                          <button disabled={simulateMessageOn} className="col btn btn-warning"
+                                  onClick={() => simulateAllChat()}>Simulate
+                          </button>
+                          <button disabled={messages.length === 0 || simulateMessageOn}
+                                  className="col btn btn-outline-primary"
+                                  onClick={startRecording}>Get video
+                          </button>
+                          <button className="col btn btn-outline-primary"
+                                  onClick={() => stopRecording()}>End recording
+                          </button>
+                        </div>
+                      </div>
+
+                    </Tab.Pane>
+                    <Tab.Pane eventKey="person2">
+                      <div className="form-floating">
+                        <textarea value={inputMessage}
+                                  id="floatingTextarea"
+                                  className="form-control"
+                                  onChange={(event) =>
+                                      setInputMessage(event.target.value)
+                                  }/>
+                        <label htmlFor="floatingTextarea">Message</label>
+                      </div>
+                      <div className={"messages-input"}>
+                        <br/>
+                        <div className={"row px-3"}>
+                          <button className="col btn btn-primary"
+                                  onClick={() => {
+                                    sendMessage({
+                                      message: inputMessage,
+                                      received: true,
+                                      imageMessage: imageMessage
+                                    })
+                                    setImageMessage(undefined)
+                                  }}>Add to conversation
+                          </button>
+                        </div>
+                        <br/>
+                        <div className={"row px-3"}>
+                          <button className="col btn btn-danger"
+                                  onClick={() => setMessages([])}>Clear
+                          </button>
+                          <button disabled={simulateMessageOn} className="col btn btn-warning"
+                                  onClick={() => simulateAllChat()}>Simulate
+                          </button>
+                          <button disabled={messages.length === 0 || simulateMessageOn}
+                                  className="col btn btn-outline-primary"
+                                  onClick={startRecording}>Get video
+                          </button>
+                          <button className="col btn btn-outline-primary"
+                                  onClick={() => stopRecording()}>End recording
+                          </button>
+                        </div>
+                      </div>
+
+                    </Tab.Pane>
+                  </Tab.Content>
+                </Tab.Container>
               </div>
             </div>
-            <div className="col-lg-6">
+            <div className="col">
               <div ref={chatRef} className="chat-container">
                 <div className="phone-top-bar">
                   <span className="time">09:41 am</span>
@@ -502,6 +647,17 @@ function App() {
 
 
                 </div>}
+              </div>
+              <div className={"generate-buttons"}>
+                <button className="btn btn-secondary"
+                        disabled={simulateMessageOn || recordedChunks.length === 0}>Download as
+                  Image
+                </button>
+
+                <button className="btn btn-success"
+                        disabled={simulateMessageOn || recordedChunks.length === 0}
+                        onClick={() => downloadRecording()}>Download as video
+                </button>
               </div>
             </div>
           </div>

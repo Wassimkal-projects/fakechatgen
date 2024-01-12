@@ -6,7 +6,6 @@ body {
 }
 
 .main-page {
-  display: flex;
   justify-content: space-around;
   padding: 10px;
 }
@@ -23,13 +22,20 @@ body {
   background-image: url("img/whatsapp_bg_light.jpg");
 }
 
+.left-container {
+  display: flex;
+  margin: auto;
+  flex-direction: column;
+  row-gap: 15px;
+}
+
 .message-received {
   padding: 5px 10px;
-  border-radius: 0 10px 10px;
+  border-radius: 10px 0 10px 10px;
   background-color: #e6ffda;
   max-width: 70%;
   display: table;
-  margin: 1px 0 5px auto;
+  margin: 0 0 5px auto;
 }
 
 .flex-message {
@@ -71,6 +77,10 @@ body {
   background-color: white;
   max-height: 100px;
   overflow: auto;
+}
+
+.transform-tail {
+  transform: scaleX(-1)
 }
 
 .microphone {
@@ -293,8 +303,36 @@ body {
     gap: 10px;*/
 }
 
+
+.inside-button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  border-radius: 0.25rem;
+}
+
+.image-upload {
+  display: none;
+}
+
+.image-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.generate-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  margin-top: 15px;
+}
+
 @media (max-width: 800px) {
   .main-page {
     flex-direction: column;
   }
 }
+

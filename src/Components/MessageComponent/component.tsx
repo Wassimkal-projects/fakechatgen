@@ -75,13 +75,13 @@ export const MessageComponent: React.FC<{
   return (
       <div>
         <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
-          {/*<span className={"message-tail"}>
-              <svg viewBox="0 0 8 13" height="13"
-                   width="8"
-                   preserveAspectRatio="xMidYMid meet"
-                   className="" version="1.1" x="0px"
-                   y="0px"
-                   enableBackground="new 0 0 8 13">
+          {
+              !isReceived && (<svg color={"white"} viewBox="0 0 8 13" height="13"
+                                   width="8"
+                                   preserveAspectRatio="xMidYMid meet"
+                                   className="" version="1.1" x="0px"
+                                   y="0px"
+                                   enableBackground="new 0 0 8 13">
                 <title>tail-in</title>
                 <path
                     opacity="0.13" fill="#0000000"
@@ -89,8 +89,8 @@ export const MessageComponent: React.FC<{
                 <path
                     fill="currentColor"
                     d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
-              </svg>
-            </span>*/}
+              </svg>)
+          }
           <div className={isReceived ? "message-received hover-options" : "message hover-options"}
                key={`message-${index}`}>
             {textMessage}
@@ -107,55 +107,16 @@ export const MessageComponent: React.FC<{
                                size={"sm"}/>
             </div>
           </div>
-        </div>
-        {/*        {!isReceived ? (
-            <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
-          <span className={"message-tail"}>
-              <svg viewBox="0 0 8 13" height="13"
-                   width="8"
-                   preserveAspectRatio="xMidYMid meet"
-                   className="" version="1.1" x="0px"
-                   y="0px"
-                   enableBackground="new 0 0 8 13">
-                <title>tail-in</title>
-                <path
-                    opacity="0.13" fill="#0000000"
-                    d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"/>
-                <path
-                    fill="currentColor"
-                    d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
+          {isReceived && (
+              <svg className={"transform-tail"} color="#e6ffda"
+                   xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 12.19"
+                   height="21" width="12">
+                <path opacity="0.13" fill="#0000000"
+                      d="M1.81,1H7V12.19L.53,3.57C-.53,2.16,0,1,1.81,1Z"/>
+                <path fill="currentColor" d="M1.81,0H7V11.19L.53,2.57C-.53,1.16,0,0,1.81,0Z"/>
               </svg>
-            </span>
-              <div className={"message hover-options"} key={`message-${index}`}>
-                {textMessage}
-                {imageMessage && (
-                    <>
-                      {textMessage && <br/>}
-                      <img className={"image-message"} src={imageMessage} alt="New message"
-                           crossOrigin="anonymous"/>
-                    </>
-                )}
-                <div className={"message-status-time"}>
-                  <div className={"msg-time"}>10:25</div>
-                  <FontAwesomeIcon className={"msg-status"} icon={faCheck} color={"green"}
-                                   size={"sm"}/>
-                </div>
-              </div>
-            </div>
-        ) : (
-            <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
-              <div className={"message-received hover-options"} key={`message-${index}`}>
-                {textMessage}
-                {imageMessage && (
-                    <>
-                      {textMessage && <br/>}
-                      <img className={"image-message"} src={imageMessage} alt={""}
-                           crossOrigin="anonymous"/>
-                    </>
-                )}
-              </div>
-            </div>
-        )}*/}
+          )}
+        </div>
         {/* Options */}
         {messageDisplayed.display && messageDisplayed.index === index && (
             <div className={"message-options"}>

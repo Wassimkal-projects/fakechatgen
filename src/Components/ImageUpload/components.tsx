@@ -6,9 +6,11 @@ export const ImageUpload: React.FC<{
 }> = ({setImageMessageState}) => {
 
   const [inputKey, setInputKey] = useState(Date.now());
+
   useEffect(() => {
     setInputKey(Date.now())
   }, [setImageMessageState])
+
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
     if (file && file.type.substr(0, 5) === 'image') {
@@ -17,7 +19,7 @@ export const ImageUpload: React.FC<{
   };
 
   return (
-      <div>
+      <div className={"image-upload"}>
         <input type="file" accept="image/*"
                onChange={handleImageChange} key={inputKey}/>
       </div>
