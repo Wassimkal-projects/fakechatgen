@@ -243,7 +243,7 @@ function App() {
     canvas.height = (chatRef.current!.offsetHeight);
 
     // @ts-ignore
-    canvasStreamRef.current = canvas.captureStream(30); // 30 FPS
+    canvasStreamRef.current = canvas.captureStream(15); // 30 FPS
 
     // @ts-ignore
     mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
@@ -272,13 +272,14 @@ function App() {
     canvas.style.height = h + 'px';
     return canvas;
   }
+
   const captureFrame = (canvas: HTMLCanvasElement) => {
     // @ts-ignore
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
     }
     if (chatRef.current) {
-      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then(capturedCanvas => {
+      html2canvas(chatRef.current, {useCORS: true}).then(capturedCanvas => {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingQuality = "high"
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
