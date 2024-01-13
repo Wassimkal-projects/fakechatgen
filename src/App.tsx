@@ -70,11 +70,11 @@ function App() {
   };
 
   const downloadRecording = () => {
-    const blob = new Blob(recordedChunks, {type: 'video/mp4'});
+    const blob = new Blob(recordedChunks, {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'recording.mp4';
+    a.download = 'recording.webm';
     a.click();
     window.URL.revokeObjectURL(url);
   };
