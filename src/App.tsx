@@ -713,7 +713,7 @@ function App() {
                 </button>
 
                 <button className="btn btn-success"
-                        disabled={simulateMessageOn || recordedChunks.length === 0}
+                        disabled={simulateMessageOn}
                         onClick={() => downloadRecording()}>Download as video
                 </button>
               </div>
