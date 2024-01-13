@@ -263,13 +263,13 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    /*    const scaleBy = 6;
-        const w = canvas.width;
-        const h = canvas.height;
-        canvas.width = canvas.width * scaleBy;
-        canvas.height = canvas.height * scaleBy;
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';*/
+    const scaleBy = 2;
+    const w = canvas.width;
+    const h = canvas.height;
+    canvas.width = canvas.width * scaleBy;
+    canvas.height = canvas.height * scaleBy;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     return canvas;
   }
 
@@ -279,7 +279,7 @@ function App() {
       return;
     }
     if (chatRef.current) {
-      html2canvas(chatRef.current, {useCORS: true}).then(capturedCanvas => {
+      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then(capturedCanvas => {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingQuality = "high"
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
@@ -388,15 +388,15 @@ function App() {
                   </label>
                 </div>
                 <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" id="flexSwitchCheckChecked"
+                  <input className="form-check-input" type="checkbox" id="flexShowHeaderSwitch"
                          checked/>
-                  <label className="form-check-label" htmlFor="flexSwitchCheckChecked">Checked
+                  <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Checked
                     Show header</label>
                 </div>
                 <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" id="flexSwitchCheckChecked"
+                  <input className="form-check-input" type="checkbox" id="flexShowPercentageSwitch"
                          checked/>
-                  <label className="form-check-label" htmlFor="flexSwitchCheckChecked">Checked
+                  <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Checked
                     Show percentage</label>
                 </div>
                 <select className="form-select" aria-label="Default select example">
