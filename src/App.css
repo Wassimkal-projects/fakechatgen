@@ -330,6 +330,18 @@ body {
   margin-top: 15px;
 }
 
+.icon-seen {
+  color: #53bdeb;
+}
+
+
+.icon-delivered {
+}
+
+.icon-sent {
+
+}
+
 @media (max-width: 800px) {
   .main-page {
     flex-direction: column;

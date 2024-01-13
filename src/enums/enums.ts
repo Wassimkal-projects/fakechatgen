@@ -6,3 +6,10 @@ export enum MessageActions {
   DELETE,
   UPDATE
 }
+
+export enum MessageStatus {
+  SENDING,
+  DELIVERED,
+  SENT,
+  SEEN
+}
