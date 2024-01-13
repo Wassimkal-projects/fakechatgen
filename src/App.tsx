@@ -70,11 +70,11 @@ function App() {
   };
 
   const downloadRecording = () => {
-    const blob = new Blob(recordedChunks, {type: 'video/webm'});
+    const blob = new Blob(recordedChunks, {type: 'video/mp4'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'recording.webm';
+    a.download = 'recording.mp4';
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -263,13 +263,13 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 2;
-    const w = canvas.width;
-    const h = canvas.height;
-    canvas.width = canvas.width * scaleBy;
-    canvas.height = canvas.height * scaleBy;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    /*    const scaleBy = 2;
+        const w = canvas.width;
+        const h = canvas.height;
+        canvas.width = canvas.width * scaleBy;
+        canvas.height = canvas.height * scaleBy;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';*/
     return canvas;
   }
 
