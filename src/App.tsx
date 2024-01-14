@@ -288,13 +288,13 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    /*    const scaleBy = 2;
-        const w = canvas.width;
-        const h = canvas.height;
-        canvas.width = canvas.width * scaleBy;
-        canvas.height = canvas.height * scaleBy;
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';*/
+    const scaleBy = 2;
+    const w = canvas.width;
+    const h = canvas.height;
+    canvas.width = w * scaleBy;
+    canvas.height = h * scaleBy;
+    // canvas.style.width = w + 'px';
+    // canvas.style.height = h + 'px';
     return canvas;
   }
 

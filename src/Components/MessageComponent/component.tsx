@@ -109,12 +109,12 @@ export const MessageComponent: React.FC<{
             <div className="msg-activity">
               <span className="msg-time"
                     data-time="08:42">08:42 am</span>
-              <div className="message-status msg-status">
+              {!isReceived && <div className="message-status msg-status">
                 {status === MessageStatus.DELIVERED && <DeliveredIcon/>}
                 {status === MessageStatus.SEEN && <SeenIcon/>}
                 {status === MessageStatus.SENT && <SentIcon/>}
                 {status === MessageStatus.SENDING && <SendingIcon/>}
-              </div>
+              </div>}
             </div>
           </div>
 
