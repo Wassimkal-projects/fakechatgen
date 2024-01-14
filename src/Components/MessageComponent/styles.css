@@ -54,3 +54,12 @@
 .image-message {
   max-width: 100%;
 }
+
+.transform-tail {
+  transform: scaleX(-1);
+  margin-right: -12px;
+}
+
+.sender-tail {
+  margin-left: -8px;
+}

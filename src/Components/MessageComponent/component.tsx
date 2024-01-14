@@ -34,7 +34,6 @@ export const MessageComponent: React.FC<{
 
   const {text, received, imageMessage, status, displayTail} = message
 
-  console.log(displayTail)
   const [isReceived, setIsReceived] = useState(received)
   const [textMessage, setTextMessage] = useState(text)
   const [updateMessageArea, setUpdateMessageArea] = useState(false)
@@ -82,7 +81,7 @@ export const MessageComponent: React.FC<{
               !isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
                                                   width="8"
                                                   preserveAspectRatio="xMidYMid meet"
-                                                  className="" version="1.1" x="0px"
+                                                  className="sender-tail" version="1.1" x="0px"
                                                   y="0px"
                                                   enableBackground="new 0 0 8 13">
                 <title>tail-in</title>

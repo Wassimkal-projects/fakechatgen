@@ -80,9 +80,6 @@ body {
   overflow: auto;
 }
 
-.transform-tail {
-  transform: scaleX(-1)
-}
 
 .microphone {
   border: 1px solid #00a884;
