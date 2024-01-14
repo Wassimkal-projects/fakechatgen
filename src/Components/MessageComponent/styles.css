@@ -55,11 +55,83 @@
   max-width: 100%;
 }
 
-.transform-tail {
-  transform: scaleX(-1);
+.sender-tail {
+  fill: #e6ffda;
   margin-right: -12px;
 }
 
-.sender-tail {
+.receiver-tail {
   margin-left: -8px;
 }
+
+/*start test*/
+.message-text {
+  max-width: 70%;
+}
+
+.message-text p {
+  display: inline;
+  word-break: break-word;
+  white-space: break-spaces;
+}
+
+.whatsapp-text-received {
+  margin: 0 0 5px 0 !important;
+  padding: 4px 5px 6px 7px;
+  border-radius: 0 10px 10px 10px;
+  background: #ffffff !important;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 13%);
+  position: relative;
+}
+
+.whatsapp-text {
+  margin: 0 0 5px auto !important;
+  padding: 4px 5px 6px 7px;
+  border-radius: 10px 0 10px 10px;
+  background: #e6ffda !important;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 13%);
+  position: relative;
+}
+
+.whatsapp-text span {
+  color: rgba(0, 0, 0, .45);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.text-msg {
+  font-size: 15px;
+  padding-left: 3px;
+  color: #000000;
+  word-wrap: break-word;
+}
+
+.space-ex {
+  width: 84px;
+  display: inline-block;
+}
+
+.msg-activity {
+  display: inline-block;
+  position: absolute;
+  justify-content: flex-end;
+  right: 10px;
+  bottom: 2px;
+}
+
+.msg-time {
+
+}
+
+.message-status {
+  display: inline-block;
+  margin-left: 3px;
+}
+
+.msg-status {
+  vertical-align: text-bottom;
+}
+
+
+/*start test*/

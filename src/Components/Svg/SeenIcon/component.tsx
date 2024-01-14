@@ -2,7 +2,7 @@ import React from "react";
 
 export const SeenIcon: React.FC = () => {
   return <>
-          <span aria-label=" Lu " data-icon="msg-dblcheck"
+          <span aria-label="Seen" data-icon="msg-dblcheck"
                 className="icon-seen">
           <svg viewBox="0 0 16 11" height="11"
                width="16"

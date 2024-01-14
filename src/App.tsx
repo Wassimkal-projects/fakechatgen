@@ -123,7 +123,7 @@ function App() {
           received: true,
           imageMessage: message.imageMessage,
           status: message.status,
-          displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received
+          displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received
         })
         messageReceived.play();
         setReceiverStatus('Online')
@@ -152,7 +152,7 @@ function App() {
           // Wait, then move to the next message
           setTimeout(() => {
             sendMessage({
-              displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
+              displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
               text: input!.textContent!,
               received: false,
               imageMessage: message.imageMessage,
@@ -221,9 +221,17 @@ function App() {
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
-    // @ts-ignore
-    endOfMessagesRef.current?.scrollIntoView();
-  }, [messages]); // Dependency array includes messages, so effect runs when messages update
+    if (messages[messages.length - 1]?.imageMessage) {
+      setTimeout(() => {
+        // @ts-ignore
+        endOfMessagesRef.current?.scrollIntoView();
+      }, 200)
+    } else {
+      // @ts-ignore
+      endOfMessagesRef.current?.scrollIntoView();
+    }
+
+  }, [messages]);
 
   useEffect(() => {
     if (currentMessageIndex >= messagesSim.length) {
@@ -260,7 +268,7 @@ function App() {
     canvas.height = (chatRef.current!.offsetHeight);
 
     // @ts-ignore
-    canvasStreamRef.current = canvas.captureStream(15); // 30 FPS
+    canvasStreamRef.current = canvas.captureStream(45); // 30 FPS
 
     // @ts-ignore
     mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
@@ -632,7 +640,7 @@ function App() {
                 {showHeaderChecked && <div className="phone-top-bar">
                   <span className="time">{time} am</span>
                   <span className="network-status">
-              <span>{network}</span>
+                  <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
                     {showPercentageChecked && <span>50%</span>}
                     <FontAwesomeIcon icon={faBatteryHalf}/>

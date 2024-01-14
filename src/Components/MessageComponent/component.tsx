@@ -12,10 +12,10 @@ import React, {useEffect, useState} from "react";
 import './styles.css';
 import {MessageActions, MessageStatus} from "../../enums/enums";
 import {Message, MessageDisplayed, ReactState} from "../../utils/types/types";
-import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
-import {SendingIcon} from "../Svg/SendingIcon/component";
-import {SentIcon} from "../Svg/SentIcon/component";
 import {SeenIcon} from "../Svg/SeenIcon/component";
+import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
+import {SentIcon} from "../Svg/SentIcon/component";
+import {SendingIcon} from "../Svg/SendingIcon/component";
 
 
 export const MessageComponent: React.FC<{
@@ -78,12 +78,12 @@ export const MessageComponent: React.FC<{
       <div>
         <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
           {
-              !isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
-                                                  width="8"
-                                                  preserveAspectRatio="xMidYMid meet"
-                                                  className="sender-tail" version="1.1" x="0px"
-                                                  y="0px"
-                                                  enableBackground="new 0 0 8 13">
+              isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
+                                                 width="8"
+                                                 preserveAspectRatio="xMidYMid meet"
+                                                 className="receiver-tail" version="1.1" x="0px"
+                                                 y="0px"
+                                                 enableBackground="new 0 0 8 13">
                 <title>tail-in</title>
                 <path
                     opacity="0.13" fill="#0000000"
@@ -93,9 +93,35 @@ export const MessageComponent: React.FC<{
                     d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
               </svg>)
           }
-          <div className={isReceived ? "message-received hover-options" : "message hover-options"}
+
+          {/*start test*/}
+          <div
+              className={`${isReceived ? "whatsapp-text-received" : "whatsapp-text"} message-text hover-options`}>
+            <p className="text-msg">{textMessage}</p>
+            {imageMessage && (
+                <>
+                  {textMessage && <br/>}
+                  <img className={"image-message"} src={imageMessage} alt="New message"
+                       crossOrigin="anonymous"/>
+                </>
+            )}
+            <span className="space-ex"/>
+            <div className="msg-activity">
+              <span className="msg-time"
+                    data-time="08:42">08:42 am</span>
+              <div className="message-status msg-status">
+                {status === MessageStatus.DELIVERED && <DeliveredIcon/>}
+                {status === MessageStatus.SEEN && <SeenIcon/>}
+                {status === MessageStatus.SENT && <SentIcon/>}
+                {status === MessageStatus.SENDING && <SendingIcon/>}
+              </div>
+            </div>
+          </div>
+
+          {/*end test*/}
+          {/*          <div className={isReceived ? "message-received hover-options" : "message hover-options"}
                key={`message-${index}`}>
-            {textMessage}
+            <p>{textMessage}</p>
             {imageMessage && (
                 <>
                   {textMessage && <br/>}
@@ -110,14 +136,12 @@ export const MessageComponent: React.FC<{
               {status === MessageStatus.SENT && <SentIcon></SentIcon>}
               {status === MessageStatus.SENDING && <SendingIcon></SendingIcon>}
             </div>
-          </div>
-          {isReceived && displayTail && (
-              <svg className={"transform-tail"} color="#e6ffda"
-                   xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 12.19"
-                   height="21" width="12">
-                <path opacity="0.13" fill="#0000000"
-                      d="M1.81,1H7V12.19L.53,3.57C-.53,2.16,0,1,1.81,1Z"/>
-                <path fill="currentColor" d="M1.81,0H7V11.19L.53,2.57C-.53,1.16,0,0,1.81,0Z"/>
+          </div>*/}
+          {!isReceived && displayTail && (
+              <svg className={"sender-tail"}
+                   viewBox="0 0 7 12.19" height="21" width="12">
+                <path opacity="0.12999999523162842; " fill="#0000000"
+                      d="M5.19,0H0V11.19L6.47,2.57C7.53,1.16,7,0,5.19,0Z"/>
               </svg>
           )}
         </div>
@@ -162,13 +186,13 @@ export const MessageComponent: React.FC<{
                   </button>
                 </div>
                 <div className={"col"}>
-                  <button disabled={!isReceived} className="btn btn-sm btn-secondary"
+                  <button disabled={isReceived} className="btn btn-sm btn-secondary"
                           onClick={() => toggleReceived()}>
 
                     <span><FontAwesomeIcon icon={faArrowLeft}/></span></button>
                 </div>
                 <div className={"col"}>
-                  <button disabled={isReceived} className="btn btn-sm btn-secondary"
+                  <button disabled={!isReceived} className="btn btn-sm btn-secondary"
                           onClick={() => toggleReceived()}>
                     <span><FontAwesomeIcon icon={faArrowRight} color={"white"}/></span>
                   </button>

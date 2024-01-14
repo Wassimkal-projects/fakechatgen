@@ -29,16 +29,6 @@ body {
   row-gap: 15px;
 }
 
-.message-received {
-  padding: 5px 10px;
-  border-radius: 10px 0 10px 10px;
-  background-color: #e6ffda;
-  max-width: 70%;
-  min-width: 40%;
-  display: table;
-  margin: 0 0 5px auto;
-}
-
 .flex-message {
   display: flex;
   align-items: self-start;
@@ -328,9 +318,8 @@ body {
 }
 
 .icon-seen {
-  color: #53bdeb;
+  color: #53bdeb !important;
 }
-
 
 .icon-delivered {
   color: #8696a0
