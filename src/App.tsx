@@ -288,7 +288,7 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 2;
+    const scaleBy = 1.5;
     const w = canvas.width;
     const h = canvas.height;
     canvas.width = w * scaleBy;
