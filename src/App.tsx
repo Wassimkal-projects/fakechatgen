@@ -89,8 +89,6 @@ function App() {
   };
 
   const sendMessage = useCallback((message: Message) => {
-    let messageContainer = document.getElementById('chatMessages');
-
     let newMessage = {
       received: message.received,
       status: message.status,
