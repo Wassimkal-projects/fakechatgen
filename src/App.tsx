@@ -7,7 +7,7 @@ import {Nav, Tab} from 'react-bootstrap';
 import html2canvas from "html2canvas";
 import {PhotoProfilModale} from "./Components/PhotoProfilModale/component";
 import {MessageComponent} from "./Components/MessageComponent/component";
-import {MessageActions} from "./enums/enums";
+import {MessageActions, MessageStatus} from "./enums/enums";
 import {Message, MessageDisplayed} from "./utils/types/types";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
@@ -19,6 +19,10 @@ import {
   faSignal,
   faVideoCamera
 } from "@fortawesome/free-solid-svg-icons";
+import {DeliveredIcon} from "./Components/Svg/DeliveredIcon/component";
+import {SentIcon} from "./Components/Svg/SentIcon/component";
+import {SendingIcon} from "./Components/Svg/SendingIcon/component";
+import {SeenIcon} from "./Components/Svg/SeenIcon/component";
 
 function App() {
   const senderTypingSound = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
@@ -56,7 +60,12 @@ function App() {
   const mediaRecorderRef = useRef(null);
   const canvasStreamRef = useRef(null);
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
-  const [selectedMessageStatus, setSelectedMessageStatus] = useState('flexRadioSeen'); // Default to the second radio
+  const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
+  const [showPercentageChecked, setShowPercentageChecked] = useState(true)
+  const [showHeaderChecked, setShowHeaderChecked] = useState(true)
+  const [network, setNetwork] = useState<string>('5G')
+  const [time, setTime] = useState<string>('15:11')
+
 
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -82,15 +91,19 @@ function App() {
   const sendMessage = useCallback((message: Message) => {
     let messageContainer = document.getElementById('chatMessages');
 
-    let newMessage = {received: message.received} as Message;
+    let newMessage = {
+      received: message.received,
+      status: message.status,
+      displayTail: message.displayTail
+    } as Message;
 
-    if (message.message) {
-      newMessage.message = message.message;
+    if (message.text) {
+      newMessage.text = message.text;
     }
     if (message.imageMessage) {
       newMessage.imageMessage = message.imageMessage;
     }
-    if (message.message || message.imageMessage) {
+    if (message.text || message.imageMessage) {
       setMessages([...messages, newMessage])
       // @ts-ignore
       setInputMessage('')
@@ -106,9 +119,11 @@ function App() {
       setTimeout(() => {
         receiverTypingSound.pause();
         sendMessage({
-          message: message.message,
+          text: message.text,
           received: true,
-          imageMessage: message.imageMessage
+          imageMessage: message.imageMessage,
+          status: message.status,
+          displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received
         })
         messageReceived.play();
         setReceiverStatus('Online')
@@ -126,8 +141,8 @@ function App() {
       senderTypingSound.play();
       let index = 0;
       const typeChar = () => {
-        if (index < message.message!.length) {
-          input!.textContent = input!.textContent + message.message!.charAt(index);
+        if (index < message.text!.length) {
+          input!.textContent = input!.textContent + message.text!.charAt(index);
           index++;
           setTimeout(typeChar, typingSpeed);
         } else {
@@ -137,9 +152,11 @@ function App() {
           // Wait, then move to the next message
           setTimeout(() => {
             sendMessage({
-              message: input!.textContent!,
+              displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
+              text: input!.textContent!,
               received: false,
-              imageMessage: message.imageMessage
+              imageMessage: message.imageMessage,
+              status: message.status
             })
             input!.textContent = '';
             messageSent.play();
@@ -186,13 +203,13 @@ function App() {
       setTimeout(() => {
         const message = messagesSim[currentMessageIndex];
         if (!message.received) {
-          if (message.message) {
+          if (message.text) {
             simulateTypingMessage(message)
           } else if (message.imageMessage) {
             simulateSendingImage(message)
           }
         } else {
-          if (message.message) {
+          if (message.text) {
             simulateReceivingMessage(message)
           } else if (message.imageMessage) {
             simulateRecevingImage(message)
@@ -205,7 +222,7 @@ function App() {
 
   useEffect(() => {
     // @ts-ignore
-    endOfMessagesRef.current?.scrollIntoView({behavior: "smooth"});
+    endOfMessagesRef.current?.scrollIntoView();
   }, [messages]); // Dependency array includes messages, so effect runs when messages update
 
   useEffect(() => {
@@ -319,8 +336,9 @@ function App() {
     switch (action) {
       case MessageActions.UPDATE:
         updatedMessages[index] = {
-          message: message!,
-          received: updatedMessages[index].received
+          text: message!,
+          received: updatedMessages[index].received,
+          displayTail: updatedMessages[index].received
         }
         setMessages(updatedMessages)
         break;
@@ -389,27 +407,40 @@ function App() {
                 </div>
                 <div className="form-check form-switch">
                   <input className="form-check-input" type="checkbox" id="flexShowHeaderSwitch"
-                         checked/>
-                  <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Checked
-                    Show header</label>
+                         checked={showHeaderChecked}
+                         onChange={event => setShowHeaderChecked(event.target.checked)}/>
+                  <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Show
+                    header</label>
                 </div>
                 <div className="form-check form-switch">
                   <input className="form-check-input" type="checkbox" id="flexShowPercentageSwitch"
-                         checked/>
-                  <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Checked
-                    Show percentage</label>
+                         checked={showPercentageChecked}
+                         onChange={event => setShowPercentageChecked(event.target.checked)}
+                  />
+                  <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Show
+                    battery
+                    percentage</label>
                 </div>
-                <select className="form-select" aria-label="Default select example">
-                  <option selected>Network</option>
-                  <option value="1">5G</option>
-                  <option value="2">4G</option>
-                  <option value="3">LTE</option>
+                <select
+                    className="form-select"
+                    aria-label="Default select example"
+                    value={network}
+                    onChange={event => setNetwork(event.target.value)}
+                >
+                  <option value="H+">H+</option>
+                  <option value="3G">3G</option>
+                  <option value="LTE">LTE</option>
+                  <option value="4G">4G</option>
+                  <option value="5G">5G</option>
                 </select>
                 <div className={"form-floating"}>
-                  <input type="text"
+                  <input type="time"
                          className="form-control"
                          placeholder="Time"
                          id="timeFormControl"
+                         value={time}
+                         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                         onChange={event => setTime(event.target.value)}
                   />
                   <label htmlFor="timeFormControl">
                     Time
@@ -456,19 +487,12 @@ function App() {
                             <div className="form-check">
                               <input className="form-check-input" type="radio"
                                      name="flexRadioSending"
-                                     id="flexRadioSending"
-                                     checked={selectedMessageStatus === "flexRadioSending"}
+                                     id="SENDING"
+                                     checked={selectedMessageStatus === "SENDING"}
                                      onChange={handleMessageStatusChange}
                               />
-                              <label className="form-check-label" htmlFor="flexRadioSending">
-                                <span aria-label="Sending" data-icon="msg-time" className=""><svg
-                                    viewBox="0 0 16 15" width="16"
-                                    preserveAspectRatio="xMidYMid meet" className="" version="1.1"
-                                    x="0px" y="0px"
-                                    enable-background="new 0 0 16 15"><title>msg-time</title>
-                                  <path
-                                      fill="currentColor"
-                                      d="M9.75,7.713H8.244V5.359c0-0.276-0.224-0.5-0.5-0.5H7.65c-0.276,0-0.5,0.224-0.5,0.5v2.947 c0,0.276,0.224,0.5,0.5,0.5h0.094c0.001,0,0.002-0.001,0.003-0.001S7.749,8.807,7.75,8.807h2c0.276,0,0.5-0.224,0.5-0.5V8.213 C10.25,7.937,10.026,7.713,9.75,7.713z M9.75,2.45h-3.5c-1.82,0-3.3,1.48-3.3,3.3v3.5c0,1.82,1.48,3.3,3.3,3.3h3.5 c1.82,0,3.3-1.48,3.3-3.3v-3.5C13.05,3.93,11.57,2.45,9.75,2.45z M11.75,9.25c0,1.105-0.895,2-2,2h-3.5c-1.104,0-2-0.895-2-2v-3.5 c0-1.104,0.896-2,2-2h3.5c1.105,0,2,0.896,2,2V9.25z"/></svg></span>
+                              <label className="form-check-label" htmlFor="SENDING">
+                                <SendingIcon/>
                                 Sending
                               </label>
                             </div>
@@ -477,21 +501,12 @@ function App() {
                             <div className="form-check">
                               <input className="form-check-input" type="radio"
                                      name="flexRadioSent"
-                                     id="flexRadioSent"
-                                     checked={selectedMessageStatus === "flexRadioSent"}
+                                     id="SENT"
+                                     checked={selectedMessageStatus === "SENT"}
                                      onChange={handleMessageStatusChange}
                               />
-                              <label className="form-check-label" htmlFor="flexRadioSent">
-                                <span aria-label="icon-sent" data-icon="msg-check"
-                                      className=""><svg
-                                    viewBox="0 0 12 11" height="11" width="16"
-                                    preserveAspectRatio="xMidYMid meet" className=""
-                                    fill="none"><title>msg-check</title>
-                                  <path
-                                      d="M11.1549 0.652832C11.0745 0.585124 10.9729 0.55127 10.8502 0.55127C10.7021 0.55127 10.5751 0.610514 10.4693 0.729004L4.28038 8.36523L1.87461 6.09277C1.8323 6.04622 1.78151 6.01025 1.72227 5.98486C1.66303 5.95947 1.60166 5.94678 1.53819 5.94678C1.407 5.94678 1.29275 5.99544 1.19541 6.09277L0.884379 6.40381C0.79128 6.49268 0.744731 6.60482 0.744731 6.74023C0.744731 6.87565 0.79128 6.98991 0.884379 7.08301L3.88047 10.0791C4.02859 10.2145 4.19574 10.2822 4.38194 10.2822C4.48773 10.2822 4.58929 10.259 4.68663 10.2124C4.78396 10.1659 4.86436 10.1003 4.92784 10.0156L11.5738 1.59863C11.6458 1.5013 11.6817 1.40186 11.6817 1.30029C11.6817 1.14372 11.6183 1.01888 11.4913 0.925781L11.1549 0.652832Z"
-                                      fill="currentcolor"/>
-                                </svg>
-                                </span>
+                              <label className="form-check-label" htmlFor="SENT">
+                                <SentIcon/>
                                 Sent
                               </label>
                             </div>
@@ -502,21 +517,12 @@ function App() {
                             <div className="form-check">
                               <input className="form-check-input" type="radio"
                                      name="flexRadioDelivered"
-                                     id="flexRadioDelivered"
-                                     checked={selectedMessageStatus === "flexRadioDelivered"}
+                                     id="DELIVERED"
+                                     checked={selectedMessageStatus === "DELIVERED"}
                                      onChange={handleMessageStatusChange}
                               />
-                              <label className="form-check-label" htmlFor="flexRadioDelivered">
-                                <span aria-label=" Distribué " data-icon="msg-dblcheck"
-                                      className="icon-delivered">
-                                  <svg viewBox="0 0 16 11" height="11" width="16"
-                                       preserveAspectRatio="xMidYMid meet"
-                                       className=""
-                                       fill="none"><title>msg-dblcheck</title><path
-                                      d="M11.0714 0.652832C10.991 0.585124 10.8894 0.55127 10.7667 0.55127C10.6186 0.55127 10.4916 0.610514 10.3858 0.729004L4.19688 8.36523L1.79112 6.09277C1.7488 6.04622 1.69802 6.01025 1.63877 5.98486C1.57953 5.95947 1.51817 5.94678 1.45469 5.94678C1.32351 5.94678 1.20925 5.99544 1.11192 6.09277L0.800883 6.40381C0.707784 6.49268 0.661235 6.60482 0.661235 6.74023C0.661235 6.87565 0.707784 6.98991 0.800883 7.08301L3.79698 10.0791C3.94509 10.2145 4.11224 10.2822 4.29844 10.2822C4.40424 10.2822 4.5058 10.259 4.60313 10.2124C4.70046 10.1659 4.78086 10.1003 4.84434 10.0156L11.4903 1.59863C11.5623 1.5013 11.5982 1.40186 11.5982 1.30029C11.5982 1.14372 11.5348 1.01888 11.4078 0.925781L11.0714 0.652832ZM8.6212 8.32715C8.43077 8.20866 8.2488 8.09017 8.0753 7.97168C7.99489 7.89128 7.8891 7.85107 7.75791 7.85107C7.6098 7.85107 7.4892 7.90397 7.3961 8.00977L7.10411 8.33984C7.01947 8.43717 6.97715 8.54508 6.97715 8.66357C6.97715 8.79476 7.0237 8.90902 7.1168 9.00635L8.1959 10.0791C8.33132 10.2145 8.49636 10.2822 8.69102 10.2822C8.79681 10.2822 8.89838 10.259 8.99571 10.2124C9.09304 10.1659 9.17556 10.1003 9.24327 10.0156L15.8639 1.62402C15.9358 1.53939 15.9718 1.43994 15.9718 1.32568C15.9718 1.1818 15.9125 1.05697 15.794 0.951172L15.4386 0.678223C15.3582 0.610514 15.2587 0.57666 15.1402 0.57666C14.9964 0.57666 14.8715 0.635905 14.7657 0.754395L8.6212 8.32715Z"
-                                      fill="currentColor"/>
-                                </svg>
-                                </span>
+                              <label className="form-check-label" htmlFor="DELIVERED">
+                                <DeliveredIcon/>
                                 Delivered
                               </label>
                             </div>
@@ -525,25 +531,12 @@ function App() {
                             <div className="form-check">
                               <input className="form-check-input" type="radio"
                                      name="flexRadioSeen"
-                                     id="flexRadioSeen"
-                                     checked={selectedMessageStatus === "flexRadioSeen"}
+                                     id="SEEN"
+                                     checked={selectedMessageStatus === "SEEN"}
                                      onChange={handleMessageStatusChange}
                               />
-                              <label className="form-check-label" htmlFor="flexRadioSeen">
-                                <span aria-label=" Lu " data-icon="msg-dblcheck"
-                                      className="icon-seen">
-                                  <svg viewBox="0 0 16 11" height="11"
-                                       width="16"
-                                       preserveAspectRatio="xMidYMid meet"
-                                       className=""
-                                       fill="none">
-                                    <title>msg-dblcheck</title>
-                                    <path
-                                        d="M11.0714 0.652832C10.991 0.585124 10.8894 0.55127 10.7667 0.55127C10.6186 0.55127 10.4916 0.610514 10.3858 0.729004L4.19688 8.36523L1.79112 6.09277C1.7488 6.04622 1.69802 6.01025 1.63877 5.98486C1.57953 5.95947 1.51817 5.94678 1.45469 5.94678C1.32351 5.94678 1.20925 5.99544 1.11192 6.09277L0.800883 6.40381C0.707784 6.49268 0.661235 6.60482 0.661235 6.74023C0.661235 6.87565 0.707784 6.98991 0.800883 7.08301L3.79698 10.0791C3.94509 10.2145 4.11224 10.2822 4.29844 10.2822C4.40424 10.2822 4.5058 10.259 4.60313 10.2124C4.70046 10.1659 4.78086 10.1003 4.84434 10.0156L11.4903 1.59863C11.5623 1.5013 11.5982 1.40186 11.5982 1.30029C11.5982 1.14372 11.5348 1.01888 11.4078 0.925781L11.0714 0.652832ZM8.6212 8.32715C8.43077 8.20866 8.2488 8.09017 8.0753 7.97168C7.99489 7.89128 7.8891 7.85107 7.75791 7.85107C7.6098 7.85107 7.4892 7.90397 7.3961 8.00977L7.10411 8.33984C7.01947 8.43717 6.97715 8.54508 6.97715 8.66357C6.97715 8.79476 7.0237 8.90902 7.1168 9.00635L8.1959 10.0791C8.33132 10.2145 8.49636 10.2822 8.69102 10.2822C8.79681 10.2822 8.89838 10.259 8.99571 10.2124C9.09304 10.1659 9.17556 10.1003 9.24327 10.0156L15.8639 1.62402C15.9358 1.53939 15.9718 1.43994 15.9718 1.32568C15.9718 1.1818 15.9125 1.05697 15.794 0.951172L15.4386 0.678223C15.3582 0.610514 15.2587 0.57666 15.1402 0.57666C14.9964 0.57666 14.8715 0.635905 14.7657 0.754395L8.6212 8.32715Z"
-                                        fill="currentColor">
-                                    </path>
-                                  </svg>
-                                </span>
+                              <label className="form-check-label" htmlFor="SEEN">
+                                <SeenIcon/>
                                 Seen
                               </label>
                             </div>
@@ -556,9 +549,12 @@ function App() {
                           <button className="col btn btn-primary"
                                   onClick={() => {
                                     sendMessage({
-                                      message: inputMessage,
+                                      text: inputMessage,
                                       received: false,
-                                      imageMessage: imageMessage
+                                      imageMessage: imageMessage,
+                                      status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
+                                      displayTail: messages.length === 0 ? true : messages[messages.length - 1].received
+
                                     })
                                     setImageMessage(undefined)
                                   }}>Add to conversation
@@ -599,9 +595,10 @@ function App() {
                           <button className="col btn btn-primary"
                                   onClick={() => {
                                     sendMessage({
-                                      message: inputMessage,
+                                      text: inputMessage,
                                       received: true,
-                                      imageMessage: imageMessage
+                                      imageMessage: imageMessage,
+                                      displayTail: messages.length === 0 ? true : !messages[messages.length - 1].received
                                     })
                                     setImageMessage(undefined)
                                   }}>Add to conversation
@@ -632,16 +629,16 @@ function App() {
             </div>
             <div className="col">
               <div ref={chatRef} className="chat-container">
-                <div className="phone-top-bar">
-                  <span className="time">09:41 am</span>
+                {showHeaderChecked && <div className="phone-top-bar">
+                  <span className="time">{time} am</span>
                   <span className="network-status">
-              <span>H+</span>
+              <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
-                    <span>50%</span>
+                    {showPercentageChecked && <span>50%</span>}
                     <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
 
-                </div>
+                </div>}
                 <div className="whatsapp-header">
                   <div className="pic-and-name">
                   <span className={"whatsapp-actions center-icon"}>
@@ -668,9 +665,7 @@ function App() {
                         <MessageComponent
                             key={index}
                             index={index}
-                            message={message.message}
-                            received={message.received}
-                            imageMessage={message.imageMessage}
+                            message={message}
                             updateMessage={(action, message) => updateMessage(action, index, message)}
                             messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
                             simulateMessageOn={simulateMessageOn}/>
@@ -685,7 +680,7 @@ function App() {
                     </div>
                     <div id="messageInput"
                          className={"editable-div"}
-                         contentEditable="true"
+                         contentEditable="false"
                          role="textbox"
                          aria-multiline="false"
                     />

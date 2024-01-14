@@ -1,11 +1,14 @@
 import {Dispatch, SetStateAction} from "react";
+import {MessageStatus} from "../../enums/enums";
 
 export type ReactState<T> = [T, Dispatch<SetStateAction<T>>];
 
 export interface Message {
   received: boolean;
-  message?: string;
+  text?: string;
   imageMessage?: string;
+  status?: MessageStatus,
+  displayTail: boolean
 }
 
 export interface MessageDisplayed {

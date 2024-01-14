@@ -34,6 +34,7 @@ body {
   border-radius: 10px 0 10px 10px;
   background-color: #e6ffda;
   max-width: 70%;
+  min-width: 40%;
   display: table;
   margin: 0 0 5px auto;
 }
@@ -95,10 +96,9 @@ body {
 
 .editable-div {
   padding: 10px;
-  min-height: 20px;
+  min-height: 40px;
   width: 100%;
   outline: none; /* Removes the default focus outline */
-  cursor: text;
 }
 
 .right-input {
@@ -336,10 +336,15 @@ body {
 
 
 .icon-delivered {
+  color: #8696a0
 }
 
 .icon-sent {
+  color: #8696a0
+}
 
+.icon-sending {
+  color: #8696a0
 }
 
 @media (max-width: 800px) {

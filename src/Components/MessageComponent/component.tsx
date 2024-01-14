@@ -10,30 +10,33 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import React, {useEffect, useState} from "react";
 import './styles.css';
-import {MessageActions} from "../../enums/enums";
-import {MessageDisplayed, ReactState} from "../../utils/types/types";
+import {MessageActions, MessageStatus} from "../../enums/enums";
+import {Message, MessageDisplayed, ReactState} from "../../utils/types/types";
+import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
+import {SendingIcon} from "../Svg/SendingIcon/component";
+import {SentIcon} from "../Svg/SentIcon/component";
+import {SeenIcon} from "../Svg/SeenIcon/component";
 
 
 export const MessageComponent: React.FC<{
-  message: string | undefined,
-  received: boolean,
-  imageMessage?: string,
+  message: Message,
   index: number,
   updateMessage: (action: MessageActions, message?: string) => void,
   messageDisplayedState: ReactState<MessageDisplayed>,
   simulateMessageOn: boolean
 }> = ({
         message,
-        received,
         index,
         updateMessage,
         messageDisplayedState,
-        imageMessage,
         simulateMessageOn
       }) => {
 
+  const {text, received, imageMessage, status, displayTail} = message
+
+  console.log(displayTail)
   const [isReceived, setIsReceived] = useState(received)
-  const [textMessage, setTextMessage] = useState(message)
+  const [textMessage, setTextMessage] = useState(text)
   const [updateMessageArea, setUpdateMessageArea] = useState(false)
   const [messageDisplayed, setMessageDisplayed] = messageDisplayedState
 
@@ -59,8 +62,8 @@ export const MessageComponent: React.FC<{
   }, [received])
 
   useEffect(() => {
-    setTextMessage(message);
-  }, [message])
+    setTextMessage(text);
+  }, [text])
 
   const toggleReceived = () => {
     setIsReceived(!isReceived);
@@ -76,12 +79,12 @@ export const MessageComponent: React.FC<{
       <div>
         <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
           {
-              !isReceived && (<svg color={"white"} viewBox="0 0 8 13" height="13"
-                                   width="8"
-                                   preserveAspectRatio="xMidYMid meet"
-                                   className="" version="1.1" x="0px"
-                                   y="0px"
-                                   enableBackground="new 0 0 8 13">
+              !isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
+                                                  width="8"
+                                                  preserveAspectRatio="xMidYMid meet"
+                                                  className="" version="1.1" x="0px"
+                                                  y="0px"
+                                                  enableBackground="new 0 0 8 13">
                 <title>tail-in</title>
                 <path
                     opacity="0.13" fill="#0000000"
@@ -103,11 +106,13 @@ export const MessageComponent: React.FC<{
             )}
             <div className={"message-status-time"}>
               <div className={"msg-time"}>10:25</div>
-              <FontAwesomeIcon className={"msg-status"} icon={faCheck} color={"green"}
-                               size={"sm"}/>
+              {status === MessageStatus.DELIVERED && <DeliveredIcon></DeliveredIcon>}
+              {status === MessageStatus.SEEN && <SeenIcon></SeenIcon>}
+              {status === MessageStatus.SENT && <SentIcon></SentIcon>}
+              {status === MessageStatus.SENDING && <SendingIcon></SendingIcon>}
             </div>
           </div>
-          {isReceived && (
+          {isReceived && displayTail && (
               <svg className={"transform-tail"} color="#e6ffda"
                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 7 12.19"
                    height="21" width="12">

@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 // @ts-ignore
 import AvatarImageCropper from 'react-avatar-image-cropper';
 import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from "react-bootstrap";
@@ -11,11 +11,7 @@ export const PhotoProfilModale: React.FC<{ pdpState: ReactState<boolean>, setPro
 
 
   const [pdpOpen, setPdpOpen] = pdpState;
-
-  useEffect(() => {
-    console.log("state changed", pdpOpen)
-  }, [pdpOpen])
-
+  
   const apply = (file: any) => {
     let src = window.URL.createObjectURL(file);
     setProfilePictureSrcState[1](src)
