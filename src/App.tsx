@@ -107,7 +107,6 @@ function App() {
       setMessages([...messages, newMessage])
       // @ts-ignore
       setInputMessage('')
-      messageContainer!.scrollTop = messageContainer!.scrollHeight;
     }
   }, [messages])
 
@@ -430,6 +429,7 @@ function App() {
                     percentage</label>
                 </div>
                 <select
+                    id={"network-form"}
                     className="form-select"
                     aria-label="Default select example"
                     value={network}
@@ -471,12 +471,12 @@ function App() {
                               <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>
                             </div>}
                         <textarea value={inputMessage}
-                                  id="floatingTextarea"
+                                  id="person1Textarea"
                                   className="form-control"
                                   onChange={(event) =>
                                       setInputMessage(event.target.value)
                                   }/>
-                        <label htmlFor="floatingTextarea">Message</label>
+                        <label htmlFor="person1Textarea">Message</label>
 
                         <label className="image-upload">
                           <input className={"image-upload"} ref={imageInputRef} type="file"
@@ -590,12 +590,12 @@ function App() {
                     <Tab.Pane eventKey="person2">
                       <div className="form-floating">
                         <textarea value={inputMessage}
-                                  id="floatingTextarea"
+                                  id="person2Textarea"
                                   className="form-control"
                                   onChange={(event) =>
                                       setInputMessage(event.target.value)
                                   }/>
-                        <label htmlFor="floatingTextarea">Message</label>
+                        <label htmlFor="person2Textarea">Message</label>
                       </div>
                       <div className={"messages-input"}>
                         <br/>
