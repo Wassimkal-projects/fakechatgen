@@ -693,9 +693,10 @@ function App() {
                     </div>
                     <div id="messageInput"
                          className={"editable-div"}
-                         contentEditable="true"
+                         contentEditable="false"
                          role="textbox"
                          aria-multiline="false"
+                         data-placeholder="Type a message"
                     />
                     <div className={"right-input"}>
                       <div className={"emoji-container"}>

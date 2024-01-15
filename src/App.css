@@ -92,6 +92,12 @@ body {
   overflow-wrap: break-word; /* Pour s'assurer que les longs mots sans espace se retournent */
 }
 
+.editable-div:empty:before {
+  content: attr(data-placeholder);
+  color: grey; /* La couleur de votre choix pour le placeholder */
+  cursor: text;
+}
+
 /* width */
 ::-webkit-scrollbar {
   width: 5px;
