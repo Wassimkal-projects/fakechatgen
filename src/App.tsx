@@ -235,7 +235,7 @@ function App() {
       endOfMessagesRef.current?.scrollIntoView();
     }
 
-  }, [messages]);
+  }, [messages.length]);
 
   useEffect(() => {
     if (currentMessageIndex >= messagesSim.length) {
