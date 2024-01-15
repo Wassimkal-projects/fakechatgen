@@ -13,7 +13,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
   faBatteryHalf,
-  faEllipsisV,
+  faEllipsisVertical,
   faImage,
   faPhone,
   faSignal,
@@ -312,7 +312,7 @@ function App() {
         const capturedCanvas = await html2canvas(chatRef.current, {useCORS: true});
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-
+        capturedCanvas.width--;
         // Adjust the timeout to allow for better performance
         // @ts-ignore
         canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
@@ -695,7 +695,7 @@ function App() {
                   <button><FontAwesomeIcon
                       icon={faVideoCamera}/></button>
                   <button><FontAwesomeIcon icon={faPhone}/></button>
-                  <button><FontAwesomeIcon icon={faEllipsisV}/></button>
+                  <button><FontAwesomeIcon icon={faEllipsisVertical}/></button>
                 </span>
                 </div>
                 <div className="chat-messages" id="chatMessages">
