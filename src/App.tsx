@@ -302,19 +302,24 @@ function App() {
     return canvas;
   }
 
-  const captureFrame = (canvas: HTMLCanvasElement) => {
+  const captureFrame = async (canvas: HTMLCanvasElement) => {
     // @ts-ignore
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
     }
     if (chatRef.current) {
-      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then(capturedCanvas => {
+      try {
+        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
         const ctx = canvas.getContext('2d')!;
-        ctx.imageSmoothingQuality = "high"
+        ctx.imageSmoothingQuality = "medium"; // Adjust quality for performance
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-        // requestAnimationFrame(() => captureFrame(canvas));
-        setTimeout(() => captureFrame(canvas), 1000 / 60);
-      });
+
+        // Adjust the timeout to allow for better performance
+        setTimeout(() => captureFrame(canvas), 1000 / 60); // Try a lower frame rate
+      } catch (error) {
+        console.error("Error capturing frame:", error);
+        // Handle your error appropriately
+      }
     }
   };
 
