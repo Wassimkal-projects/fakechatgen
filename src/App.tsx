@@ -137,9 +137,16 @@ function App() {
     const simulateTypingMessage = (message: Message) => {
       senderTypingSound.play();
       let index = 0;
+
+      const scrollToBottom = () => {
+        //TODO make it conditional to the length
+        input!.scrollTop = input!.scrollHeight;
+      }
+
       const typeChar = () => {
         if (index < message.text!.length) {
           input!.textContent = input!.textContent + message.text!.charAt(index);
+          scrollToBottom();
           index++;
           setTimeout(typeChar, typingSpeed);
         } else {
