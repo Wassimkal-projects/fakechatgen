@@ -13,7 +13,6 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
   faBatteryHalf,
-  faEllipsisVertical,
   faImage,
   faPhone,
   faSignal,
@@ -695,7 +694,7 @@ function App() {
                   <button><FontAwesomeIcon
                       icon={faVideoCamera}/></button>
                   <button><FontAwesomeIcon icon={faPhone}/></button>
-                  <button><FontAwesomeIcon icon={faEllipsisVertical}/></button>
+                  <button><FontAwesomeIcon icon={faPhone}/></button>
                 </span>
                 </div>
                 <div className="chat-messages" id="chatMessages">
