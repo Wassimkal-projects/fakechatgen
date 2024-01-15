@@ -292,13 +292,13 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    /*    const scaleBy = 1.5;
-        const w = canvas.width;
-        const h = canvas.height;
-        canvas.width = w * scaleBy;
-        canvas.height = h * scaleBy;
-        // canvas.style.width = w + 'px';
-        // canvas.style.height = h + 'px';*/
+    const scaleBy = 1.5;
+    const w = canvas.width;
+    const h = canvas.height;
+    canvas.width = w * scaleBy;
+    canvas.height = h * scaleBy;
+    // canvas.style.width = w + 'px';
+    // canvas.style.height = h + 'px';
     return canvas;
   }
 
@@ -320,8 +320,8 @@ function App() {
         captureFrame(canvas)
         // setTimeout(() => captureFrame(canvas), 1000 / 240) // Try a lower frame rate
       } catch (error) {
+        setInputMessage("Error")
         console.error("Error capturing frame:", error);
-        // Handle your error appropriately
       }
     }
   };
