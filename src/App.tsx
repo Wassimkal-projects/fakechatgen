@@ -13,6 +13,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
   faBatteryHalf,
+  faEllipsisV,
   faImage,
   faPhone,
   faSignal,
@@ -690,13 +691,12 @@ function App() {
                       <span className={"status-text"}>{receiverStatus}</span>
                     </div>
                   </div>
-                  <span className="whatsapp-actions">
-                  <button><FontAwesomeIcon
-                      icon={faVideoCamera}/></button>
-                  <button><FontAwesomeIcon icon={faPhone}/></button>
-                  <button><FontAwesomeIcon icon={faPhone}/></button>
-                  <button><FontAwesomeIcon icon={faPhone}/></button>
-                </span>
+                  <div className="whatsapp-actions">
+                    <span><FontAwesomeIcon
+                        icon={faVideoCamera}/></span>
+                    <span><FontAwesomeIcon icon={faPhone}/></span>
+                    <span><FontAwesomeIcon icon={faEllipsisV}/></span>
+                  </div>
                 </div>
                 <div className="chat-messages" id="chatMessages">
                   {messages.map((message, index) => {
