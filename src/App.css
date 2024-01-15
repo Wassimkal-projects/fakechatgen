@@ -67,6 +67,7 @@ body {
   margin-right: 10px;
   background-color: white;
   max-height: 100px;
+  overflow: hidden; /* Ajouté pour gérer le débordement dans le conteneur flex */
 }
 
 
@@ -86,7 +87,9 @@ body {
   min-height: 40px;
   width: 100%;
   overflow: auto;
-  outline: none; /* Removes the default focus outline */
+  outline: none;
+  min-width: 0; /* Important pour permettre la réduction sous la largeur du contenu */
+  overflow-wrap: break-word; /* Pour s'assurer que les longs mots sans espace se retournent */
 }
 
 /* width */

@@ -693,7 +693,7 @@ function App() {
                     </div>
                     <div id="messageInput"
                          className={"editable-div"}
-                         contentEditable="false"
+                         contentEditable="true"
                          role="textbox"
                          aria-multiline="false"
                     />
