@@ -272,7 +272,7 @@ function App() {
     canvas.height = (chatRef.current!.offsetHeight);
 
     // @ts-ignore
-    canvasStreamRef.current = canvas.captureStream(45); // FPS
+    canvasStreamRef.current = canvas.captureStream(0); // FPS
 
     // @ts-ignore
     mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
@@ -292,13 +292,13 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 1.5;
-    const w = canvas.width;
-    const h = canvas.height;
-    canvas.width = w * scaleBy;
-    canvas.height = h * scaleBy;
-    // canvas.style.width = w + 'px';
-    // canvas.style.height = h + 'px';
+    /*    const scaleBy = 1.5;
+        const w = canvas.width;
+        const h = canvas.height;
+        canvas.width = w * scaleBy;
+        canvas.height = h * scaleBy;
+        // canvas.style.width = w + 'px';
+        // canvas.style.height = h + 'px';*/
     return canvas;
   }
 
@@ -315,7 +315,10 @@ function App() {
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
 
         // Adjust the timeout to allow for better performance
-        setTimeout(() => captureFrame(canvas), 1000 / 60); // Try a lower frame rate
+        // @ts-ignore
+        canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
+        captureFrame(canvas)
+        // setTimeout(() => captureFrame(canvas), 1000 / 240) // Try a lower frame rate
       } catch (error) {
         console.error("Error capturing frame:", error);
         // Handle your error appropriately
