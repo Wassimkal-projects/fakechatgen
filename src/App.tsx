@@ -234,7 +234,7 @@ function App() {
       // @ts-ignore
       endOfMessagesRef.current?.scrollIntoView();
     }
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
   useEffect(() => {
