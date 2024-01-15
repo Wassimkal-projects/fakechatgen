@@ -272,7 +272,7 @@ function App() {
     canvas.height = (chatRef.current!.offsetHeight);
 
     // @ts-ignore
-    canvasStreamRef.current = canvas.captureStream(45); // 30 FPS
+    canvasStreamRef.current = canvas.captureStream(45); // FPS
 
     // @ts-ignore
     mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
@@ -281,6 +281,7 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
+      console.log("data available", event)
       if (event.data.size > 0) {
         setRecordedChunks(prev => [...prev, event.data]);
       }
@@ -292,7 +293,7 @@ function App() {
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 1.5;
+    const scaleBy = 20;
     const w = canvas.width;
     const h = canvas.height;
     canvas.width = w * scaleBy;
@@ -312,6 +313,7 @@ function App() {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingQuality = "high"
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+        console.log(ctx)
         requestAnimationFrame(() => captureFrame(canvas));
       });
     }
@@ -326,6 +328,25 @@ function App() {
     if (canvasStreamRef.current) {
       // @ts-ignore
       canvasStreamRef.current.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const downloadImage = () => {
+    if (chatRef.current) {
+      html2canvas(chatRef.current).then((canvas) => {
+        // Create an image from the canvas
+        const image = canvas.toDataURL('image/png');
+
+        // Create a link to download the image
+        const downloadLink = document.createElement('a');
+        downloadLink.href = image;
+        downloadLink.download = 'captured-image.png';
+
+        // Append the link to the document and trigger the download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      });
     }
   };
 
@@ -717,8 +738,8 @@ function App() {
                 </div>}
               </div>
               <div className={"generate-buttons"}>
-                <button className="btn btn-secondary"
-                        disabled={simulateMessageOn || recordedChunks.length === 0}>Download as
+                <button className="btn btn-secondary" onClick={() => downloadImage()}
+                        disabled={simulateMessageOn}>Download as
                   Image
                 </button>
 
