@@ -109,6 +109,7 @@ function App() {
   }, [messages])
 
   useEffect(() => {
+    console.log("useEffect: start simulations")
     // functions
     const simulateReceivingMessage = (message: Message) => {
       setReceiverStatus('Typing')
@@ -244,6 +245,7 @@ function App() {
   }, [currentMessageIndex, messagesSim]);
 
   const simulateAllChat = () => {
+    console.log("simulate all chat")
     if (messages.length < 1) return;
 
     // TODO hide all options
@@ -258,14 +260,19 @@ function App() {
       setCurrentMessageIndex(0);
       input!.textContent = '';
     }
+    console.log("end simulate all chat")
   };
 
 
   const startRecording = () => {
+    console.log("start recording")
     setRecordedChunks([])
     simulateAllChat();
 
+    console.log("before creating canvas")
     const canvas = document.createElement('canvas');
+    console.log("after creating canvas")
+
     // @ts-ignore
     canvas.width = (chatRef.current!.offsetWidth);
     // @ts-ignore
@@ -281,6 +288,8 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
+      console.log("ondataavailable")
+
       if (event.data.size > 0) {
         setRecordedChunks(prev => [...prev, event.data]);
       }
@@ -288,6 +297,7 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.start();
+    console.log("call capture frame")
     captureFrame(canvas);
   };
 
@@ -303,6 +313,7 @@ function App() {
     }*/
 
   const captureFrame = async (canvas: HTMLCanvasElement) => {
+    console.log("capture frame")
     // @ts-ignore
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
@@ -312,7 +323,8 @@ function App() {
         const capturedCanvas = await html2canvas(chatRef.current, {useCORS: true});
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-        capturedCanvas.width--;
+
+        console.log("CaptureFrame: context", ctx)
         // Adjust the timeout to allow for better performance
         // @ts-ignore
         canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
