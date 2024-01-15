@@ -288,19 +288,19 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.start();
-    captureFrame(scaleCanvasImage(canvas));
+    captureFrame(canvas);
   };
 
-  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 1.5;
-    const w = canvas.width;
-    const h = canvas.height;
-    canvas.width = w * scaleBy;
-    canvas.height = h * scaleBy;
-    // canvas.style.width = w + 'px';
-    // canvas.style.height = h + 'px';
-    return canvas;
-  }
+  /*  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
+      const scaleBy = 1.5;
+      const w = canvas.width;
+      const h = canvas.height;
+      canvas.width = w * scaleBy;
+      canvas.height = h * scaleBy;
+      // canvas.style.width = w + 'px';
+      // canvas.style.height = h + 'px';
+      return canvas;
+    }*/
 
   const captureFrame = async (canvas: HTMLCanvasElement) => {
     // @ts-ignore
@@ -309,9 +309,8 @@ function App() {
     }
     if (chatRef.current) {
       try {
-        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
+        const capturedCanvas = await html2canvas(chatRef.current, {useCORS: true});
         const ctx = canvas.getContext('2d')!;
-        ctx.imageSmoothingQuality = "medium"; // Adjust quality for performance
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
 
         // Adjust the timeout to allow for better performance
@@ -320,7 +319,6 @@ function App() {
         captureFrame(canvas)
         // setTimeout(() => captureFrame(canvas), 1000 / 240) // Try a lower frame rate
       } catch (error) {
-        setInputMessage("Error")
         console.error("Error capturing frame:", error);
       }
     }
