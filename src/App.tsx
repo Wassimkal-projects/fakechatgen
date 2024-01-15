@@ -695,6 +695,7 @@ function App() {
                       icon={faVideoCamera}/></button>
                   <button><FontAwesomeIcon icon={faPhone}/></button>
                   <button><FontAwesomeIcon icon={faPhone}/></button>
+                  <button><FontAwesomeIcon icon={faPhone}/></button>
                 </span>
                 </div>
                 <div className="chat-messages" id="chatMessages">
