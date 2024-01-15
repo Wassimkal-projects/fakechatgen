@@ -281,7 +281,6 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-      console.log("data available", event)
       if (event.data.size > 0) {
         setRecordedChunks(prev => [...prev, event.data]);
       }
@@ -289,11 +288,11 @@ function App() {
 
     // @ts-ignore
     mediaRecorderRef.current.start();
-    requestAnimationFrame(() => captureFrame(scaleCanvasImage(canvas)));
+    captureFrame(scaleCanvasImage(canvas));
   };
 
   const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 20;
+    const scaleBy = 1.5;
     const w = canvas.width;
     const h = canvas.height;
     canvas.width = w * scaleBy;
@@ -313,8 +312,8 @@ function App() {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingQuality = "high"
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-        console.log(ctx)
-        requestAnimationFrame(() => captureFrame(canvas));
+        // requestAnimationFrame(() => captureFrame(canvas));
+        setTimeout(() => captureFrame(canvas), 1000 / 60);
       });
     }
   };
@@ -333,7 +332,7 @@ function App() {
 
   const downloadImage = () => {
     if (chatRef.current) {
-      html2canvas(chatRef.current).then((canvas) => {
+      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then((canvas) => {
         // Create an image from the canvas
         const image = canvas.toDataURL('image/png');
 
