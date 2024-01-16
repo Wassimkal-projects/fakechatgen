@@ -267,43 +267,31 @@ function App() {
 
   const startRecording = () => {
     try {
-      setRecordedChunks([])
+      setRecordedChunks([]);
       simulateAllChat();
 
       const canvas = document.createElement('canvas');
 
+      // Set canvas dimensions
       // @ts-ignore
-      canvas.width = (chatRef.current!.offsetWidth);
+      canvas.width = chatRef.current!.offsetWidth;
       // @ts-ignore
-      canvas.height = (chatRef.current!.offsetHeight);
+      canvas.height = chatRef.current!.offsetHeight;
 
+      // Capture the stream from the canvas with the desired frame rate
       // @ts-ignore
-      canvasStreamRef.current = canvas.captureStream(0); // FPS
+      canvasStreamRef.current = canvas.captureStream(60); // Specify the frame rate here, e.g., 30 FPS
 
-      const types = [
-        "video/webm",
-        "audio/webm",
-        "video/webm;codecs=vp8",
-        "video/webm;codecs=daala",
-        "video/webm;codecs=h264",
-        "audio/webm;codecs=opus",
-        "video/mpeg",
-        "video/mp4"
-      ];
+      const mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
 
-      for (const type of types) {
-        console.log(
-            `Is ${type} supported? ${
-                MediaRecorder.isTypeSupported(type) ? "Maybe!" : "Nope :("
-            }`,
-        );
-      }
-
+      // Initialize the MediaRecorder with the stream and specify the bit rate
       // @ts-ignore
       mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
-        mimeType: 'video/mp4'
+        mimeType: mimeType,
+        videoBitsPerSecond: 3500000 // Specify the bit rate here, e.g., 2.5Mbps
       });
 
+      // Handle the data available event
       // @ts-ignore
       mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
@@ -311,24 +299,26 @@ function App() {
         }
       };
 
+      // Start recording
       // @ts-ignore
       mediaRecorderRef.current.start();
-      captureFrame(canvas);
+
+      // Capture the frame (assuming this is a function defined elsewhere in your code)
+      captureFrame(scaleCanvasImage(canvas));
+
     } catch (error) {
-      console.log("Error log from startRecording", error)
+      console.log("Error log from startRecording", error);
     }
   }
 
-  /*  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-      const scaleBy = 1.5;
-      const w = canvas.width;
-      const h = canvas.height;
-      canvas.width = w * scaleBy;
-      canvas.height = h * scaleBy;
-      // canvas.style.width = w + 'px';
-      // canvas.style.height = h + 'px';
-      return canvas;
-    }*/
+  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
+    const scaleBy = 1.5;
+    const w = canvas.width;
+    const h = canvas.height;
+    canvas.width = w * scaleBy;
+    canvas.height = h * scaleBy;
+    return canvas;
+  }
 
   const captureFrame = async (canvas: HTMLCanvasElement) => {
     // @ts-ignore
@@ -337,15 +327,14 @@ function App() {
     }
     if (chatRef.current) {
       try {
-        const capturedCanvas = await html2canvas(chatRef.current, {useCORS: true});
+        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
         const ctx = canvas.getContext('2d')!;
         ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
 
         // Adjust the timeout to allow for better performance
         // @ts-ignore
         canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
-        captureFrame(canvas)
-        // setTimeout(() => captureFrame(canvas), 1000 / 240) // Try a lower frame rate
+        setTimeout(() => captureFrame(canvas), 1000 / 60) // Try a lower frame rate
       } catch (error) {
         console.log("Error from capture frame", error)
       }
