@@ -109,21 +109,79 @@ function App() {
   }, [messages])
 
   useEffect(() => {
-    // functions
-    const simulateReceivingMessage = (message: Message) => {
-      setReceiverStatus('Typing')
-      receiverTypingSound.play()
-      setTimeout(() => {
-        receiverTypingSound.pause();
-        sendMessage({
-          text: message.text,
-          received: true,
-          imageMessage: message.imageMessage,
-          status: message.status,
-          displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received
-        })
-        messageReceived.play();
-        setReceiverStatus('Online')
+    try {
+      // functions
+      const simulateReceivingMessage = (message: Message) => {
+        setReceiverStatus('Typing')
+        receiverTypingSound.play()
+        setTimeout(() => {
+          receiverTypingSound.pause();
+          sendMessage({
+            text: message.text,
+            received: true,
+            imageMessage: message.imageMessage,
+            status: message.status,
+            displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received
+          })
+          messageReceived.play();
+          setReceiverStatus('Online')
+          setCurrentMessageIndex(currentMessageIndex + 1);
+          if (currentMessageIndex === messagesSim.length - 1) {
+            setTimeout(() => {
+              setSimulateMessageOn(false)
+              stopRecording();
+            }, 2000)
+          }
+        }, responseTime)
+      }
+
+      const simulateTypingMessage = (message: Message) => {
+        senderTypingSound.play();
+        let index = 0;
+
+        const scrollToBottom = () => {
+          //TODO make it conditional to the length
+          input!.scrollTop = input!.scrollHeight;
+        }
+
+        const typeChar = () => {
+          if (index < message.text!.length) {
+            input!.textContent = input!.textContent + message.text!.charAt(index);
+            scrollToBottom();
+            index++;
+            setTimeout(typeChar, typingSpeed);
+          } else {
+            // End sound after a message is complete
+            senderTypingSound.pause();
+
+            // Wait, then move to the next message
+            setTimeout(() => {
+              sendMessage({
+                displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
+                text: input!.textContent!,
+                received: false,
+                imageMessage: message.imageMessage,
+                status: message.status
+              })
+              input!.textContent = '';
+              messageSent.play();
+              setCurrentMessageIndex(currentMessageIndex + 1);
+              if (currentMessageIndex === messagesSim.length - 1) {
+                setTimeout(() => {
+                  setSimulateMessageOn(false)
+                  stopRecording();
+                }, 2000)
+              }
+            }, delayBetweenMessages);
+          }
+        };
+        typeChar();
+      }
+
+      const simulateSendingImage = (message: Message) => {
+        senderTypingSound.pause();
+        sendMessage(message)
+        messageSent.play();
         setCurrentMessageIndex(currentMessageIndex + 1);
         if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
@@ -131,95 +189,41 @@ function App() {
             stopRecording();
           }, 2000)
         }
-      }, responseTime)
-    }
-
-    const simulateTypingMessage = (message: Message) => {
-      senderTypingSound.play();
-      let index = 0;
-
-      const scrollToBottom = () => {
-        //TODO make it conditional to the length
-        input!.scrollTop = input!.scrollHeight;
       }
 
-      const typeChar = () => {
-        if (index < message.text!.length) {
-          input!.textContent = input!.textContent + message.text!.charAt(index);
-          scrollToBottom();
-          index++;
-          setTimeout(typeChar, typingSpeed);
-        } else {
-          // End sound after a message is complete
-          senderTypingSound.pause();
-
-          // Wait, then move to the next message
+      const simulateRecevingImage = (message: Message) => {
+        senderTypingSound.pause();
+        sendMessage(message)
+        messageSent.play();
+        setCurrentMessageIndex(currentMessageIndex + 1);
+        if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
-            sendMessage({
-              displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
-              text: input!.textContent!,
-              received: false,
-              imageMessage: message.imageMessage,
-              status: message.status
-            })
-            input!.textContent = '';
-            messageSent.play();
-            setCurrentMessageIndex(currentMessageIndex + 1);
-            if (currentMessageIndex === messagesSim.length - 1) {
-              setTimeout(() => {
-                setSimulateMessageOn(false)
-                stopRecording();
-              }, 2000)
+            setSimulateMessageOn(false)
+            stopRecording();
+          }, 2000)
+        }
+      }
+
+      if (isTyping && currentMessageIndex < messagesSim.length) {
+        setTimeout(() => {
+          const message = messagesSim[currentMessageIndex];
+          if (!message.received) {
+            if (message.text) {
+              simulateTypingMessage(message)
+            } else if (message.imageMessage) {
+              simulateSendingImage(message)
             }
-          }, delayBetweenMessages);
-        }
-      };
-      typeChar();
-    }
-
-    const simulateSendingImage = (message: Message) => {
-      senderTypingSound.pause();
-      sendMessage(message)
-      messageSent.play();
-      setCurrentMessageIndex(currentMessageIndex + 1);
-      if (currentMessageIndex === messagesSim.length - 1) {
-        setTimeout(() => {
-          setSimulateMessageOn(false)
-          stopRecording();
-        }, 2000)
-      }
-    }
-
-    const simulateRecevingImage = (message: Message) => {
-      senderTypingSound.pause();
-      sendMessage(message)
-      messageSent.play();
-      setCurrentMessageIndex(currentMessageIndex + 1);
-      if (currentMessageIndex === messagesSim.length - 1) {
-        setTimeout(() => {
-          setSimulateMessageOn(false)
-          stopRecording();
-        }, 2000)
-      }
-    }
-
-    if (isTyping && currentMessageIndex < messagesSim.length) {
-      setTimeout(() => {
-        const message = messagesSim[currentMessageIndex];
-        if (!message.received) {
-          if (message.text) {
-            simulateTypingMessage(message)
-          } else if (message.imageMessage) {
-            simulateSendingImage(message)
+          } else {
+            if (message.text) {
+              simulateReceivingMessage(message)
+            } else if (message.imageMessage) {
+              simulateRecevingImage(message)
+            }
           }
-        } else {
-          if (message.text) {
-            simulateReceivingMessage(message)
-          } else if (message.imageMessage) {
-            simulateRecevingImage(message)
-          }
-        }
-      }, 1000)
+        }, 1000)
+      }
+    } catch (error) {
+      console.log("Error from useEffect", error)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTyping, currentMessageIndex, messagesSim]);
@@ -262,35 +266,39 @@ function App() {
 
 
   const startRecording = () => {
-    setRecordedChunks([])
-    simulateAllChat();
+    try {
+      setRecordedChunks([])
+      simulateAllChat();
 
-    const canvas = document.createElement('canvas');
+      const canvas = document.createElement('canvas');
 
-    // @ts-ignore
-    canvas.width = (chatRef.current!.offsetWidth);
-    // @ts-ignore
-    canvas.height = (chatRef.current!.offsetHeight);
+      // @ts-ignore
+      canvas.width = (chatRef.current!.offsetWidth);
+      // @ts-ignore
+      canvas.height = (chatRef.current!.offsetHeight);
 
-    // @ts-ignore
-    canvasStreamRef.current = canvas.captureStream(0); // FPS
+      // @ts-ignore
+      canvasStreamRef.current = canvas.captureStream(0); // FPS
 
-    // @ts-ignore
-    mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
-      mimeType: 'video/webm'
-    });
+      // @ts-ignore
+      mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
+        mimeType: 'video/webm'
+      });
 
-    // @ts-ignore
-    mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-      if (event.data.size > 0) {
-        setRecordedChunks(prev => [...prev, event.data]);
-      }
-    };
+      // @ts-ignore
+      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          setRecordedChunks(prev => [...prev, event.data]);
+        }
+      };
 
-    // @ts-ignore
-    mediaRecorderRef.current.start();
-    captureFrame(canvas);
-  };
+      // @ts-ignore
+      mediaRecorderRef.current.start();
+      captureFrame(canvas);
+    } catch (error) {
+      console.log("Error log from startRecording", error)
+    }
+  }
 
   /*  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
       const scaleBy = 1.5;
@@ -320,6 +328,7 @@ function App() {
         captureFrame(canvas)
         // setTimeout(() => captureFrame(canvas), 1000 / 240) // Try a lower frame rate
       } catch (error) {
+        console.log("Error from capture frame", error)
       }
     }
   };
