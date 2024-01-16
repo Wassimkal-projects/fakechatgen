@@ -173,6 +173,7 @@ body {
   height: 40px;
   background-color: #ccc;
   border-radius: 50%;
+  cursor: pointer;
   /* Add a background image if needed */
 }
 

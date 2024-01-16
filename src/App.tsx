@@ -65,7 +65,12 @@ function App() {
   const [showHeaderChecked, setShowHeaderChecked] = useState(true)
   const [network, setNetwork] = useState<string>('5G')
   const [time, setTime] = useState<string>('15:11')
+  const [messageTime, setMessageTime] = useState<string>('15:11')
+  const [activeTab, setActiveTab] = useState('person1'); // default to the first tab
 
+  const handleTabSelect = (key: any) => {
+    setActiveTab(key);
+  };
 
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -92,7 +97,8 @@ function App() {
     let newMessage = {
       received: message.received,
       status: message.status,
-      displayTail: message.displayTail
+      displayTail: message.displayTail,
+      messageTime: message.messageTime
     } as Message;
 
     if (message.text) {
@@ -121,7 +127,8 @@ function App() {
             received: true,
             imageMessage: message.imageMessage,
             status: message.status,
-            displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received
+            displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
+            messageTime: message.messageTime
           })
           messageReceived.play();
           setReceiverStatus('Online')
@@ -161,7 +168,8 @@ function App() {
                 text: input!.textContent!,
                 received: false,
                 imageMessage: message.imageMessage,
-                status: message.status
+                status: message.status,
+                messageTime: message.messageTime
               })
               input!.textContent = '';
               messageSent.play();
@@ -393,7 +401,8 @@ function App() {
         updatedMessages[index] = {
           text: message!,
           received: updatedMessages[index].received,
-          displayTail: updatedMessages[index].received
+          displayTail: updatedMessages[index].received,
+          messageTime: messageTime
         }
         setMessages(updatedMessages)
         break;
@@ -502,7 +511,8 @@ function App() {
                     Time
                   </label>
                 </div>
-                <Tab.Container id="left-tabs-example" defaultActiveKey="person1">
+                <Tab.Container id="left-tabs-example" activeKey={activeTab}
+                               onSelect={handleTabSelect}>
                   <Nav variant="tabs" className="mb-3">
                     <Nav.Item>
                       <Nav.Link eventKey="person1">Person 1</Nav.Link>
@@ -599,44 +609,13 @@ function App() {
                           </div>
                         </div>
                       </div>
-                      <div className={"messages-input"}>
-                        <br/>
-                        <div className={"row px-3"}>
-                          <button className="col btn btn-primary"
-                                  onClick={() => {
-                                    sendMessage({
-                                      text: inputMessage,
-                                      received: false,
-                                      imageMessage: imageMessage,
-                                      status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
-                                      displayTail: messages.length === 0 ? true : messages[messages.length - 1].received
-
-                                    })
-                                    setImageMessage(undefined)
-                                  }}>Add to conversation
-                          </button>
-                        </div>
-                        <br/>
-                        <div className={"row px-3"}>
-                          <button className="col btn btn-danger"
-                                  onClick={() => setMessages([])}>Clear
-                          </button>
-                          <button disabled={simulateMessageOn} className="col btn btn-warning"
-                                  onClick={() => simulateAllChat()}>Simulate
-                          </button>
-                          <button disabled={messages.length === 0 || simulateMessageOn}
-                                  className="col btn btn-outline-primary"
-                                  onClick={startRecording}>Get video
-                          </button>
-                          <button className="col btn btn-outline-primary"
-                                  onClick={() => stopRecording()}>End recording
-                          </button>
-                        </div>
-                      </div>
-
                     </Tab.Pane>
                     <Tab.Pane eventKey="person2">
                       <div className="form-floating">
+                        {imageMessage &&
+                            <div className={"image-preview"}>
+                              <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>
+                            </div>}
                         <textarea value={inputMessage}
                                   id="person2Textarea"
                                   className="form-control"
@@ -644,43 +623,64 @@ function App() {
                                       setInputMessage(event.target.value)
                                   }/>
                         <label htmlFor="person2Textarea">Message</label>
+                        <label className="image-upload">
+                          <input className={"image-upload"} ref={imageInputRef} type="file"
+                                 accept="image/*" key={inputKey}
+                                 onChange={handleImageChange}/>
+                        </label>
+                        <button className="inside-button" onClick={() => handleUploadImage()}>
+                          <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
+                          />
+                        </button>
                       </div>
-                      <div className={"messages-input"}>
-                        <br/>
-                        <div className={"row px-3"}>
-                          <button className="col btn btn-primary"
-                                  onClick={() => {
-                                    sendMessage({
-                                      text: inputMessage,
-                                      received: true,
-                                      imageMessage: imageMessage,
-                                      displayTail: messages.length === 0 ? true : !messages[messages.length - 1].received
-                                    })
-                                    setImageMessage(undefined)
-                                  }}>Add to conversation
-                          </button>
-                        </div>
-                        <br/>
-                        <div className={"row px-3"}>
-                          <button className="col btn btn-danger"
-                                  onClick={() => setMessages([])}>Clear
-                          </button>
-                          <button disabled={simulateMessageOn} className="col btn btn-warning"
-                                  onClick={() => simulateAllChat()}>Simulate
-                          </button>
-                          <button disabled={messages.length === 0 || simulateMessageOn}
-                                  className="col btn btn-outline-primary"
-                                  onClick={startRecording}>Get video
-                          </button>
-                          <button className="col btn btn-outline-primary"
-                                  onClick={() => stopRecording()}>End recording
-                          </button>
-                        </div>
-                      </div>
-
                     </Tab.Pane>
                   </Tab.Content>
                 </Tab.Container>
+                <div className={"form-floating"}>
+                  <input type="time"
+                         className="form-control"
+                         placeholder="Time"
+                         id="messageTimeFormControl"
+                         value={messageTime}
+                         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                         onChange={event => setMessageTime(event.target.value)}
+                  />
+                  <label htmlFor="timeFormControl">
+                    Time
+                  </label>
+                </div>
+                <div className={"messages-input"}>
+                  <div className={"row px-3"}>
+                    <button className="col btn btn-primary"
+                            onClick={() => {
+                              sendMessage({
+                                text: inputMessage,
+                                received: activeTab === "person2",
+                                status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
+                                imageMessage: imageMessage,
+                                displayTail: messages.length === 0 ? true : !messages[messages.length - 1].received,
+                                messageTime: messageTime
+                              })
+                              setImageMessage(undefined)
+                            }}>Add to conversation
+                    </button>
+                  </div>
+                  <div className={"row px-3 mt-3"}>
+                    <button className="col btn btn-danger"
+                            onClick={() => setMessages([])}>Clear
+                    </button>
+                    <button disabled={simulateMessageOn} className="col btn btn-warning"
+                            onClick={() => simulateAllChat()}>Simulate
+                    </button>
+                    <button disabled={messages.length === 0 || simulateMessageOn}
+                            className="col btn btn-outline-primary"
+                            onClick={startRecording}>Get video
+                    </button>
+                    <button className="col btn btn-outline-primary"
+                            onClick={() => stopRecording()}>End recording
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="col">

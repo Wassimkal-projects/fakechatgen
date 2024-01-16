@@ -7,8 +7,9 @@ export interface Message {
   received: boolean;
   text?: string;
   imageMessage?: string;
-  status?: MessageStatus,
-  displayTail: boolean
+  status?: MessageStatus;
+  displayTail: boolean;
+  messageTime: string;
 }
 
 export interface MessageDisplayed {

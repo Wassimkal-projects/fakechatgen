@@ -108,7 +108,7 @@ export const MessageComponent: React.FC<{
             <span className="space-ex"/>
             <div className="msg-activity">
               <span className="msg-time"
-                    data-time="08:42">08:42 am</span>
+                    data-time="08:42">{message.messageTime}</span>
               {!isReceived && <div className="message-status msg-status">
                 {status === MessageStatus.DELIVERED && <DeliveredIcon/>}
                 {status === MessageStatus.SEEN && <SeenIcon/>}
