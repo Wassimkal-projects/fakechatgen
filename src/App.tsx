@@ -280,9 +280,28 @@ function App() {
       // @ts-ignore
       canvasStreamRef.current = canvas.captureStream(0); // FPS
 
+      const types = [
+        "video/webm",
+        "audio/webm",
+        "video/webm;codecs=vp8",
+        "video/webm;codecs=daala",
+        "video/webm;codecs=h264",
+        "audio/webm;codecs=opus",
+        "video/mpeg",
+        "video/mp4"
+      ];
+
+      for (const type of types) {
+        console.log(
+            `Is ${type} supported? ${
+                MediaRecorder.isTypeSupported(type) ? "Maybe!" : "Nope :("
+            }`,
+        );
+      }
+
       // @ts-ignore
       mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
-        mimeType: 'video/webm'
+        mimeType: 'video/mp4'
       });
 
       // @ts-ignore
