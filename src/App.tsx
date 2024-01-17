@@ -237,14 +237,16 @@ function App() {
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
-    if (messages[messages.length - 1]?.imageMessage) {
-      setTimeout(() => {
+    if (simulateMessageOn) {
+      if (messages[messages.length - 1]?.imageMessage) {
+        setTimeout(() => {
+          // @ts-ignore
+          endOfMessagesRef.current?.scrollIntoView();
+        }, 200)
+      } else {
         // @ts-ignore
         endOfMessagesRef.current?.scrollIntoView();
-      }, 200)
-    } else {
-      // @ts-ignore
-      endOfMessagesRef.current?.scrollIntoView();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
@@ -295,8 +297,7 @@ function App() {
       // Initialize the MediaRecorder with the stream and specify the bit rate
       // @ts-ignore
       mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
-        mimeType: mimeType,
-        videoBitsPerSecond: 3500000 // Specify the bit rate here, e.g., 2.5Mbps
+        mimeType: mimeType
       });
 
       // Handle the data available event
@@ -676,9 +677,6 @@ function App() {
                             className="col btn btn-outline-primary"
                             onClick={startRecording}>Get video
                     </button>
-                    <button className="col btn btn-outline-primary"
-                            onClick={() => stopRecording()}>End recording
-                    </button>
                   </div>
                 </div>
               </div>
@@ -766,7 +764,7 @@ function App() {
                 </button>
 
                 <button className="btn btn-success"
-                        disabled={simulateMessageOn}
+                        disabled={simulateMessageOn || recordedChunks.length === 0}
                         onClick={() => downloadRecording()}>Download as video
                 </button>
               </div>
