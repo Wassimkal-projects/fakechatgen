@@ -16,6 +16,7 @@ import {SeenIcon} from "../Svg/SeenIcon/component";
 import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
 import {SentIcon} from "../Svg/SentIcon/component";
 import {SendingIcon} from "../Svg/SendingIcon/component";
+import {MessageDiv} from "./styles";
 
 
 export const MessageComponent: React.FC<{
@@ -75,28 +76,26 @@ export const MessageComponent: React.FC<{
   }
 
   return (
-      <div>
+      <div
+          className={(messageDisplayed.display && messageDisplayed.index === index) ? "options-border" : ""}>
         <div onClick={() => toogleOptionsDisplayed()} className={"flex-message"}>
-          {
-              isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
-                                                 width="8"
-                                                 preserveAspectRatio="xMidYMid meet"
-                                                 className="receiver-tail" version="1.1" x="0px"
-                                                 y="0px"
-                                                 enableBackground="new 0 0 8 13">
-                <title>tail-in</title>
-                <path
-                    opacity="0.13" fill="#0000000"
-                    d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"/>
-                <path
-                    fill="currentColor"
-                    d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
-              </svg>)
+          {isReceived && displayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
+                                              width="8"
+                                              preserveAspectRatio="xMidYMid meet"
+                                              className="receiver-tail" version="1.1" x="0px"
+                                              y="0px"
+                                              enableBackground="new 0 0 8 13">
+            <title>tail-in</title>
+            <path
+                opacity="0.13" fill="#0000000"
+                d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"/>
+            <path
+                fill="currentColor"
+                d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
+          </svg>)
           }
-
-          {/*start test*/}
-          <div
-              className={`${isReceived ? "whatsapp-text-received" : "whatsapp-text"} message-text hover-options`}>
+          <MessageDiv isReceived={isReceived} displayTail={displayTail}
+                      className={`message-text hover-options`}>
             <p className="text-msg">{textMessage}</p>
             {imageMessage && (
                 <>
@@ -116,30 +115,10 @@ export const MessageComponent: React.FC<{
                 {status === MessageStatus.SENDING && <SendingIcon/>}
               </div>}
             </div>
-          </div>
-
-          {/*end test*/}
-          {/*          <div className={isReceived ? "message-received hover-options" : "message hover-options"}
-               key={`message-${index}`}>
-            <p>{textMessage}</p>
-            {imageMessage && (
-                <>
-                  {textMessage && <br/>}
-                  <img className={"image-message"} src={imageMessage} alt="New message"
-                       crossOrigin="anonymous"/>
-                </>
-            )}
-            <div className={"message-status-time"}>
-              <div className={"msg-time"}>10:25</div>
-              {status === MessageStatus.DELIVERED && <DeliveredIcon></DeliveredIcon>}
-              {status === MessageStatus.SEEN && <SeenIcon></SeenIcon>}
-              {status === MessageStatus.SENT && <SentIcon></SentIcon>}
-              {status === MessageStatus.SENDING && <SendingIcon></SendingIcon>}
-            </div>
-          </div>*/}
+          </MessageDiv>
           {!isReceived && displayTail && (
               <svg className={"sender-tail"}
-                   viewBox="0 0 7 12.19" height="21" width="12">
+                   viewBox="0 0 7 12.19" height="12" width="7">
                 <path opacity="0.12999999523162842; " fill="#0000000"
                       d="M5.19,0H0V11.19L6.47,2.57C7.53,1.16,7,0,5.19,0Z"/>
               </svg>

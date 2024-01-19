@@ -93,6 +93,10 @@ function App() {
     window.URL.revokeObjectURL(url);
   };
 
+  const clearConversation = () => {
+    setMessages([])
+    setRecordedChunks([])
+  }
   const sendMessage = useCallback((message: Message) => {
     let newMessage = {
       received: message.received,
@@ -659,7 +663,7 @@ function App() {
                                 received: activeTab === "person2",
                                 status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
                                 imageMessage: imageMessage,
-                                displayTail: messages.length === 0 ? true : !messages[messages.length - 1].received,
+                                displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== (activeTab === 'person2'),
                                 messageTime: messageTime
                               })
                               setImageMessage(undefined)
@@ -668,7 +672,7 @@ function App() {
                   </div>
                   <div className={"row px-3 mt-3"}>
                     <button className="col btn btn-danger"
-                            onClick={() => setMessages([])}>Clear
+                            onClick={() => clearConversation()}>Clear
                     </button>
                     <button disabled={simulateMessageOn} className="col btn btn-warning"
                             onClick={() => simulateAllChat()}>Simulate

@@ -37,9 +37,13 @@
 }
 
 .message-options {
-  border: 1px solid #cccccc;
-  border-radius: 5px;
   padding: 10px;
+}
+
+.options-border {
+  border: 1px solid #146c43;
+  border-radius: 10px;
+  padding: 5px;
 }
 
 .hover-options:hover {
@@ -57,11 +61,11 @@
 
 .sender-tail {
   fill: #e6ffda;
-  margin-right: -12px;
+  /*margin-right: -7px;*/
 }
 
 .receiver-tail {
-  margin-left: -8px;
+  /*margin-left: -8px;*/
 }
 
 /*start test*/
@@ -75,7 +79,7 @@
   white-space: break-spaces;
 }
 
-.whatsapp-text-received {
+/*.whatsapp-text-received {
   margin: 0 0 5px 0 !important;
   padding: 4px 5px 6px 7px;
   border-radius: 0 10px 10px 10px;
@@ -91,7 +95,7 @@
   background: #e6ffda !important;
   box-shadow: 0 1px 1px rgb(0 0 0 / 13%);
   position: relative;
-}
+}*/
 
 .whatsapp-text span {
   color: rgba(0, 0, 0, .45);
