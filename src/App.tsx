@@ -23,6 +23,7 @@ import {DeliveredIcon} from "./Components/Svg/DeliveredIcon/component";
 import {SentIcon} from "./Components/Svg/SentIcon/component";
 import {SendingIcon} from "./Components/Svg/SendingIcon/component";
 import {SeenIcon} from "./Components/Svg/SeenIcon/component";
+import {toDateInHumanFormat, toDateInUsFormat} from "./utils/date/dates";
 
 function App() {
   const senderTypingSound = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
@@ -64,6 +65,9 @@ function App() {
   const [showPercentageChecked, setShowPercentageChecked] = useState(true)
   const [showHeaderChecked, setShowHeaderChecked] = useState(true)
   const [network, setNetwork] = useState<string>('5G')
+  const [date, setDate] = useState<string>('None')
+  const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
+
   const [time, setTime] = useState<string>('15:11')
   const [messageTime, setMessageTime] = useState<string>('15:11')
   const [activeTab, setActiveTab] = useState('person1'); // default to the first tab
@@ -102,7 +106,8 @@ function App() {
       received: message.received,
       status: message.status,
       displayTail: message.displayTail,
-      messageTime: message.messageTime
+      messageTime: message.messageTime,
+      messageDate: message.messageDate
     } as Message;
 
     if (message.text) {
@@ -132,7 +137,8 @@ function App() {
             imageMessage: message.imageMessage,
             status: message.status,
             displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
-            messageTime: message.messageTime
+            messageTime: message.messageTime,
+            messageDate: message.messageDate
           })
           messageReceived.play();
           setReceiverStatus('Online')
@@ -173,7 +179,8 @@ function App() {
                 received: false,
                 imageMessage: message.imageMessage,
                 status: message.status,
-                messageTime: message.messageTime
+                messageTime: message.messageTime,
+                messageDate: message.messageDate
               })
               input!.textContent = '';
               messageSent.play();
@@ -391,7 +398,7 @@ function App() {
     index: 0
   })
 
-  const updateMessage = (action: MessageActions, index: number, message?: string) => {
+  const updateMessage = (action: MessageActions, index: number, message?: Message) => {
     const swapElements = (index1: number, index2: number): any[] => {
       const newArray = [...messages];
       let temp = newArray[index1];
@@ -404,15 +411,18 @@ function App() {
     switch (action) {
       case MessageActions.UPDATE:
         updatedMessages[index] = {
-          text: message!,
-          received: updatedMessages[index].received,
+          text: message!.text,
+          received: message!.received,
           displayTail: updatedMessages[index].received,
-          messageTime: messageTime
+          messageTime: message!.messageTime,
+          messageDate: message!.messageDate,
+          imageMessage: message!.imageMessage,
+          status: message!.status
         }
         setMessages(updatedMessages)
         break;
       case MessageActions.DELETE:
-        setMessages(updatedMessages.filter(message => message !== updatedMessages[index]));
+        setMessages(updatedMessages.filter((message, currentIndex) => currentIndex !== index));
         break;
       case MessageActions.DOWN:
         if (updatedMessages.length <= 1 || index === updatedMessages.length - 1) return;
@@ -458,10 +468,6 @@ function App() {
             <div className="col mb-5">
               <div className={"left-container"}>
                 <div className={"form-floating"}>
-                  {/*                  <div className="input-group-prepend">
-                    <span className="input-group-text"
-                          id="inputGroup-sizing-sm">Receiver's name</span>
-                  </div>*/}
                   <input type="text"
                          className="form-control"
                          placeholder="Receiver's name"
@@ -641,19 +647,44 @@ function App() {
                     </Tab.Pane>
                   </Tab.Content>
                 </Tab.Container>
-                <div className={"form-floating"}>
-                  <input type="time"
-                         className="form-control"
-                         placeholder="Time"
-                         id="messageTimeFormControl"
-                         value={messageTime}
-                         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                         onChange={event => setMessageTime(event.target.value)}
-                  />
-                  <label htmlFor="timeFormControl">
-                    Time
-                  </label>
+                <div className={"row"}>
+                  <div className={"col"}>
+                    <input type="time"
+                           className="form-control"
+                           placeholder="Time"
+                           id="messageTimeFormControl"
+                           value={messageTime}
+                           pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                           onChange={event => setMessageTime(event.target.value)}
+                    />
+                  </div>
+                  <div className={"col"}>
+                    <select
+                        id={"date-form"}
+                        className="form-select"
+                        aria-label="Select date"
+                        value={date}
+                        onChange={event => setDate(event.target.value)}
+                    >
+                      <option value="None">None</option>
+                      <option value="Today">Today</option>
+                      <option value="Yesterday">Yesterday</option>
+                      <option value="Other">Other date</option>
+                    </select>
+                    {date === "Other" && (
+                        <input type="date"
+                               className="form-control mt-2"
+                               placeholder="Time"
+                               value={otherDate}
+                               id="messageDateFormControl"
+                               onChange={event => {
+                                 setOtherDate(event.target.value)
+                               }}
+                        />
+                    )}
+                  </div>
                 </div>
+
                 <div className={"messages-input"}>
                   <div className={"row px-3"}>
                     <button className="col btn btn-primary"
@@ -664,24 +695,25 @@ function App() {
                                 status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
                                 imageMessage: imageMessage,
                                 displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== (activeTab === 'person2'),
-                                messageTime: messageTime
+                                messageTime: messageTime,
+                                messageDate: date === 'Other' ? toDateInHumanFormat(new Date(otherDate)) : date
                               })
                               setImageMessage(undefined)
                             }}>Add to conversation
                     </button>
                   </div>
-                  <div className={"row px-3 mt-3"}>
-                    <button className="col btn btn-danger"
-                            onClick={() => clearConversation()}>Clear
-                    </button>
-                    <button disabled={simulateMessageOn} className="col btn btn-warning"
-                            onClick={() => simulateAllChat()}>Simulate
-                    </button>
-                    <button disabled={messages.length === 0 || simulateMessageOn}
-                            className="col btn btn-outline-primary"
-                            onClick={startRecording}>Get video
-                    </button>
-                  </div>
+                </div>
+                <div className={"row px-3"}>
+                  <button className="col btn btn-danger"
+                          onClick={() => clearConversation()}>Clear
+                  </button>
+                  <button disabled={simulateMessageOn} className="col btn btn-warning"
+                          onClick={() => simulateAllChat()}>Simulate
+                  </button>
+                  <button disabled={messages.length === 0 || simulateMessageOn}
+                          className="col btn btn-outline-primary"
+                          onClick={startRecording}>Get video
+                  </button>
                 </div>
               </div>
             </div>

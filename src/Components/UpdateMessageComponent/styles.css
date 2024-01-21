@@ -1,0 +1,5 @@
+.update-container {
+  row-gap: 10px;
+  display: flex;
+  flex-direction: column;
+}

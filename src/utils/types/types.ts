@@ -10,6 +10,7 @@ export interface Message {
   status?: MessageStatus;
   displayTail: boolean;
   messageTime: string;
+  messageDate?: string;
 }
 
 export interface MessageDisplayed {

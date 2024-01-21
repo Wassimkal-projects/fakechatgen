@@ -11,7 +11,7 @@ export const PhotoProfilModale: React.FC<{ pdpState: ReactState<boolean>, setPro
 
 
   const [pdpOpen, setPdpOpen] = pdpState;
-  
+
   const apply = (file: any) => {
     let src = window.URL.createObjectURL(file);
     setProfilePictureSrcState[1](src)
@@ -20,12 +20,11 @@ export const PhotoProfilModale: React.FC<{ pdpState: ReactState<boolean>, setPro
 
   return (
 
-      <Modal open={true}
-             show={pdpOpen}
-             onHide={() => setPdpOpen(false)}
-             aria-labelledby="Modifier PDP"
-             aria-describedby="Modifier PDP"
-
+      <Modal
+          show={pdpOpen}
+          onHide={() => setPdpOpen(false)}
+          aria-labelledby="Update PP"
+          aria-describedby="Update PP"
       >
         <ModalHeader>
           Add profile picture
