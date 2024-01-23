@@ -26,14 +26,18 @@ import {SeenIcon} from "./Components/Svg/SeenIcon/component";
 import {toDateInHumanFormat, toDateInUsFormat} from "./utils/date/dates";
 
 function App() {
-  const senderTypingSound = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
-  senderTypingSound.loop = true;
+  const silentSound = new Audio(require('./sounds/silent_audio.mp3'));
+  silentSound.loop = true;
 
-  const messageSent = new Audio(require('./sounds/sent_sound_whatsapp.mp3'));
-  const messageReceived = new Audio(require('./sounds/message_received.mp3'));
+  const senderTypingSound = useRef(new Audio(require('./sounds/typing_sound_whatsapp.mp3')));
+  senderTypingSound.current.loop = true;
 
-  const receiverTypingSound = new Audio(require('./sounds/is_writing_whatsapp.mp3'));
-  receiverTypingSound.loop = true;
+  let messageSentSound = useRef(new Audio(require('./sounds/sent_sound_whatsapp.mp3')));
+
+  let messageReceivedSound = useRef(new Audio(require('./sounds/message_received.mp3')));
+
+  let receiverTypingSound = useRef(new Audio(require('./sounds/is_writing_whatsapp.mp3')));
+  receiverTypingSound.current.loop = true;
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
 
@@ -67,6 +71,7 @@ function App() {
   const [network, setNetwork] = useState<string>('5G')
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
+  const [waitingDownload, setWaitingDownload] = useState<boolean>(false)
 
   const [time, setTime] = useState<string>('15:11')
   const [messageTime, setMessageTime] = useState<string>('15:11')
@@ -85,16 +90,6 @@ function App() {
 
   const handleMessageStatusChange = (event: any) => {
     setSelectedMessageStatus(event.target.id);
-  };
-
-  const downloadRecording = () => {
-    const blob = new Blob(recordedChunks, {type: 'video/mp4'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'recording.mp4';
-    a.click();
-    window.URL.revokeObjectURL(url);
   };
 
   const clearConversation = () => {
@@ -128,9 +123,9 @@ function App() {
       // functions
       const simulateReceivingMessage = (message: Message) => {
         setReceiverStatus('Typing')
-        receiverTypingSound.play()
+        receiverTypingSound.current.muted = false
         setTimeout(() => {
-          receiverTypingSound.pause();
+          receiverTypingSound.current.muted = true
           sendMessage({
             text: message.text,
             received: true,
@@ -140,7 +135,7 @@ function App() {
             messageTime: message.messageTime,
             messageDate: message.messageDate
           })
-          messageReceived.play();
+          messageReceivedSound.current.play();
           setReceiverStatus('Online')
           setCurrentMessageIndex(currentMessageIndex + 1);
           if (currentMessageIndex === messagesSim.length - 1) {
@@ -153,7 +148,7 @@ function App() {
       }
 
       const simulateTypingMessage = (message: Message) => {
-        senderTypingSound.play();
+        senderTypingSound.current.muted = false;
         let index = 0;
 
         const scrollToBottom = () => {
@@ -169,8 +164,8 @@ function App() {
             setTimeout(typeChar, typingSpeed);
           } else {
             // End sound after a message is complete
-            senderTypingSound.pause();
-
+            senderTypingSound.current.muted = true
+            silentSound.play()
             // Wait, then move to the next message
             setTimeout(() => {
               sendMessage({
@@ -183,7 +178,7 @@ function App() {
                 messageDate: message.messageDate
               })
               input!.textContent = '';
-              messageSent.play();
+              messageSentSound.current.play();
               setCurrentMessageIndex(currentMessageIndex + 1);
               if (currentMessageIndex === messagesSim.length - 1) {
                 setTimeout(() => {
@@ -198,9 +193,9 @@ function App() {
       }
 
       const simulateSendingImage = (message: Message) => {
-        senderTypingSound.pause();
+        senderTypingSound.current.pause();
         sendMessage(message)
-        messageSent.play();
+        messageSentSound.current.play();
         setCurrentMessageIndex(currentMessageIndex + 1);
         if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
@@ -211,9 +206,9 @@ function App() {
       }
 
       const simulateRecevingImage = (message: Message) => {
-        senderTypingSound.pause();
+        senderTypingSound.current.pause();
         sendMessage(message)
-        messageSent.play();
+        messageSentSound.current.play();
         setCurrentMessageIndex(currentMessageIndex + 1);
         if (currentMessageIndex === messagesSim.length - 1) {
           setTimeout(() => {
@@ -285,12 +280,30 @@ function App() {
     }
   };
 
+  const downloadRecording = useCallback(() => {
+    const blob = new Blob(recordedChunks, {type: 'video/mp4'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'recording.mp4';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }, [recordedChunks])
 
-  const startRecording = () => {
+  useEffect(() => {
+    if (waitingDownload && recordedChunks.length !== 0) {
+      downloadRecording()
+      setWaitingDownload(false)
+    }
+  }, [downloadRecording, recordedChunks, waitingDownload])
+
+  let startRecording = () => {
+    setWaitingDownload(true)
+
     try {
+      //start animation
       setRecordedChunks([]);
       simulateAllChat();
-
       const canvas = document.createElement('canvas');
 
       // Set canvas dimensions
@@ -299,15 +312,47 @@ function App() {
       // @ts-ignore
       canvas.height = chatRef.current!.offsetHeight;
 
+      // capture audio
+      // @ts-ignore
+      const receiverTypingSoundStream = receiverTypingSound.current.captureStream();
+      // @ts-ignore
+      const senderTypingSoundStream = senderTypingSound.current.captureStream();
+
+      // @ts-ignore
+      const messageReceivedSoundStream = messageReceivedSound.current.captureStream();
+      // @ts-ignore
+      const messageSentSoundStream = messageSentSound.current.captureStream();
+
+      const audioContext = new AudioContext();
+      const mixedOutput = audioContext.createMediaStreamDestination();
+
+      // Assuming track1 and track2 are your audio tracks
+      const source1 = audioContext.createMediaStreamSource(new MediaStream([...receiverTypingSoundStream.getAudioTracks()]));
+      const source2 = audioContext.createMediaStreamSource(new MediaStream([...senderTypingSoundStream.getAudioTracks()]));
+      const source3 = audioContext.createMediaStreamSource(new MediaStream([...messageSentSoundStream.getAudioTracks()]));
+      const source4 = audioContext.createMediaStreamSource(new MediaStream([...messageReceivedSoundStream.getAudioTracks()]));
+
+      source1.connect(mixedOutput);
+      source2.connect(mixedOutput);
+      source3.connect(mixedOutput);
+      source4.connect(mixedOutput);
+
       // Capture the stream from the canvas with the desired frame rate
       // @ts-ignore
       canvasStreamRef.current = canvas.captureStream(60); // Specify the frame rate here, e.g., 30 FPS
+
+      // Combine audio and canvas streams
+      const combinedStream = new MediaStream([
+        // @ts-ignore
+        ...canvasStreamRef.current.getVideoTracks(),
+        ...mixedOutput.stream.getAudioTracks(),
+      ]);
 
       const mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
 
       // Initialize the MediaRecorder with the stream and specify the bit rate
       // @ts-ignore
-      mediaRecorderRef.current = new MediaRecorder(canvasStreamRef.current, {
+      mediaRecorderRef.current = new MediaRecorder(combinedStream, {
         mimeType: mimeType
       });
 
@@ -319,7 +364,14 @@ function App() {
         }
       };
 
+      senderTypingSound.current.play()
+      senderTypingSound.current.muted = true;
+
+      receiverTypingSound.current.play()
+      receiverTypingSound.current.muted = true;
+
       // Start recording
+
       // @ts-ignore
       mediaRecorderRef.current.start();
 
@@ -369,7 +421,9 @@ function App() {
     }
     if (canvasStreamRef.current) {
       // @ts-ignore
-      canvasStreamRef.current.getTracks().forEach(track => track.stop());
+      canvasStreamRef.current.getTracks().forEach(track => {
+        track.stop()
+      });
     }
   };
 
@@ -704,7 +758,7 @@ function App() {
                   </div>
                 </div>
                 <div className={"row px-3"}>
-                  <button className="col btn btn-danger"
+                  <button disabled={simulateMessageOn} className="col btn btn-danger"
                           onClick={() => clearConversation()}>Clear
                   </button>
                   <button disabled={simulateMessageOn} className="col btn btn-warning"
@@ -712,7 +766,7 @@ function App() {
                   </button>
                   <button disabled={messages.length === 0 || simulateMessageOn}
                           className="col btn btn-outline-primary"
-                          onClick={startRecording}>Get video
+                          onClick={startRecording}>{waitingDownload ? `${((messages.length / messagesSim.length) * 100).toFixed(2)}%` : "Download as video"}
                   </button>
                 </div>
               </div>
@@ -800,7 +854,7 @@ function App() {
                 </button>
 
                 <button className="btn btn-success"
-                        disabled={simulateMessageOn || recordedChunks.length === 0}
+                        disabled={simulateMessageOn}
                         onClick={() => downloadRecording()}>Download as video
                 </button>
               </div>
