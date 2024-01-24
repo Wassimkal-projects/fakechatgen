@@ -312,25 +312,26 @@ function App() {
       // @ts-ignore
       canvas.height = chatRef.current!.offsetHeight;
 
-      // capture audio
-      // @ts-ignore
-      const receiverTypingSoundStream = receiverTypingSound.current.captureStream();
-      // @ts-ignore
-      const senderTypingSoundStream = senderTypingSound.current.captureStream();
-
-      // @ts-ignore
-      const messageReceivedSoundStream = messageReceivedSound.current.captureStream();
-      // @ts-ignore
-      const messageSentSoundStream = messageSentSound.current.captureStream();
-
       const audioContext = new AudioContext();
       const mixedOutput = audioContext.createMediaStreamDestination();
 
+      // capture audio
+      // @ts-ignore
+      const source1 = audioContext.createMediaElementSource(receiverTypingSound.current);
+      // @ts-ignore
+      const source2 = audioContext.createMediaElementSource(senderTypingSound.current);
+      // @ts-ignore
+      const source3 = audioContext.createMediaElementSource(messageSentSound.current);
+      // @ts-ignore
+      const source4 = audioContext.createMediaElementSource(messageReceivedSound.current);
+      
       // Assuming track1 and track2 are your audio tracks
-      const source1 = audioContext.createMediaStreamSource(new MediaStream([...receiverTypingSoundStream.getAudioTracks()]));
-      const source2 = audioContext.createMediaStreamSource(new MediaStream([...senderTypingSoundStream.getAudioTracks()]));
-      const source3 = audioContext.createMediaStreamSource(new MediaStream([...messageSentSoundStream.getAudioTracks()]));
-      const source4 = audioContext.createMediaStreamSource(new MediaStream([...messageReceivedSoundStream.getAudioTracks()]));
+      /*
+            const source1 = audioContext.createMediaStreamSource(new MediaStream([...receiverTypingSoundStream.getAudioTracks()]));
+            const source2 = audioContext.createMediaStreamSource(new MediaStream([...senderTypingSoundStream.getAudioTracks()]));
+            const source3 = audioContext.createMediaStreamSource(new MediaStream([...messageSentSoundStream.getAudioTracks()]));
+            const source4 = audioContext.createMediaStreamSource(new MediaStream([...messageReceivedSoundStream.getAudioTracks()]));
+      */
 
       source1.connect(mixedOutput);
       source2.connect(mixedOutput);
