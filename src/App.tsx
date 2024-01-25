@@ -29,7 +29,7 @@ function App() {
   const silentSound = new Audio(require('./sounds/silent_audio.mp3'));
   silentSound.loop = true;
 
-  const senderTypingSound = useRef(new Audio(require('./sounds/typing_sound_whatsapp.mp3')));
+  let senderTypingSound = useRef(new Audio(require('./sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
 
   let messageSentSound = useRef(new Audio(require('./sounds/sent_sound_whatsapp.mp3')));
@@ -123,9 +123,11 @@ function App() {
       // functions
       const simulateReceivingMessage = (message: Message) => {
         setReceiverStatus('Typing')
-        receiverTypingSound.current.muted = false
+        // receiverTypingSound.muted = false
+        receiverTypingSound.current.play()
         setTimeout(() => {
-          receiverTypingSound.current.muted = true
+          receiverTypingSound.current.pause()
+          // receiverTypingSound.muted = true
           sendMessage({
             text: message.text,
             received: true,
@@ -148,7 +150,8 @@ function App() {
       }
 
       const simulateTypingMessage = (message: Message) => {
-        senderTypingSound.current.muted = false;
+        senderTypingSound.current.play();
+        // senderTypingSound.muted = false;
         let index = 0;
 
         const scrollToBottom = () => {
@@ -164,7 +167,8 @@ function App() {
             setTimeout(typeChar, typingSpeed);
           } else {
             // End sound after a message is complete
-            senderTypingSound.current.muted = true
+            senderTypingSound.current.pause()
+            // senderTypingSound.muted = true
             silentSound.play()
             // Wait, then move to the next message
             setTimeout(() => {
@@ -290,9 +294,27 @@ function App() {
     window.URL.revokeObjectURL(url);
   }, [recordedChunks])
 
+  function resetAudioElements() {
+    senderTypingSound.current.remove();
+    receiverTypingSound.current.remove();
+    messageReceivedSound.current.remove();
+    messageSentSound.current.remove();
+
+    senderTypingSound.current = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
+    senderTypingSound.current.loop = true;
+
+    messageSentSound.current = new Audio(require('./sounds/sent_sound_whatsapp.mp3'));
+
+    messageReceivedSound.current = new Audio(require('./sounds/message_received.mp3'));
+
+    receiverTypingSound.current = new Audio(require('./sounds/is_writing_whatsapp.mp3'));
+    receiverTypingSound.current.loop = true;
+  }
+
   useEffect(() => {
     if (waitingDownload && recordedChunks.length !== 0) {
       downloadRecording()
+      resetAudioElements()
       setWaitingDownload(false)
     }
   }, [downloadRecording, recordedChunks, waitingDownload])
@@ -311,32 +333,28 @@ function App() {
       canvas.width = chatRef.current!.offsetWidth;
       // @ts-ignore
       canvas.height = chatRef.current!.offsetHeight;
-
+      
       const audioContext = new AudioContext();
       const mixedOutput = audioContext.createMediaStreamDestination();
 
       // capture audio
-      // @ts-ignore
-      const source1 = audioContext.createMediaElementSource(receiverTypingSound.current);
-      // @ts-ignore
-      const source2 = audioContext.createMediaElementSource(senderTypingSound.current);
-      // @ts-ignore
-      const source3 = audioContext.createMediaElementSource(messageSentSound.current);
-      // @ts-ignore
-      const source4 = audioContext.createMediaElementSource(messageReceivedSound.current);
-      
-      // Assuming track1 and track2 are your audio tracks
-      /*
-            const source1 = audioContext.createMediaStreamSource(new MediaStream([...receiverTypingSoundStream.getAudioTracks()]));
-            const source2 = audioContext.createMediaStreamSource(new MediaStream([...senderTypingSoundStream.getAudioTracks()]));
-            const source3 = audioContext.createMediaStreamSource(new MediaStream([...messageSentSoundStream.getAudioTracks()]));
-            const source4 = audioContext.createMediaStreamSource(new MediaStream([...messageReceivedSoundStream.getAudioTracks()]));
-      */
+      // Function to create and connect source nodes
+      const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
+        try {
+          const sourceNode = audioContext.createMediaElementSource(audioElement);
+          sourceNode.connect(mixedOutput);
+          sourceNode.connect(audioContext.destination);
+          return sourceNode; // Store the source node
+        } catch (error) {
+          console.log(`Error creating node ${key}`, error)
+        }
+      };
 
-      source1.connect(mixedOutput);
-      source2.connect(mixedOutput);
-      source3.connect(mixedOutput);
-      source4.connect(mixedOutput);
+      // Use current audio elements to create and connect source nodes
+      getOrCreateSourceNode(receiverTypingSound.current, 'receiverTyping');
+      getOrCreateSourceNode(senderTypingSound.current, 'senderTyping');
+      getOrCreateSourceNode(messageSentSound.current, 'messageSent');
+      getOrCreateSourceNode(messageReceivedSound.current, 'messageReceived');
 
       // Capture the stream from the canvas with the desired frame rate
       // @ts-ignore
@@ -362,16 +380,9 @@ function App() {
       mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           setRecordedChunks(prev => [...prev, event.data]);
+
         }
       };
-
-      senderTypingSound.current.play()
-      senderTypingSound.current.muted = true;
-
-      receiverTypingSound.current.play()
-      receiverTypingSound.current.muted = true;
-
-      // Start recording
 
       // @ts-ignore
       mediaRecorderRef.current.start();
