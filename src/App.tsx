@@ -127,6 +127,7 @@ function App() {
         receiverTypingSound.current.play()
         setTimeout(() => {
           receiverTypingSound.current.pause()
+          receiverTypingSound.current.currentTime = 0;
           // receiverTypingSound.muted = true
           sendMessage({
             text: message.text,
@@ -314,7 +315,6 @@ function App() {
   useEffect(() => {
     if (waitingDownload && recordedChunks.length !== 0) {
       downloadRecording()
-      resetAudioElements()
       setWaitingDownload(false)
     }
   }, [downloadRecording, recordedChunks, waitingDownload])
@@ -333,11 +333,11 @@ function App() {
       canvas.width = chatRef.current!.offsetWidth;
       // @ts-ignore
       canvas.height = chatRef.current!.offsetHeight;
-      
+
       const audioContext = new AudioContext();
       const mixedOutput = audioContext.createMediaStreamDestination();
 
-      // capture audio
+      // capture audioc
       // Function to create and connect source nodes
       const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
         try {
@@ -380,8 +380,8 @@ function App() {
       mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           setRecordedChunks(prev => [...prev, event.data]);
-
         }
+        resetAudioElements()
       };
 
       // @ts-ignore
