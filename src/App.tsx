@@ -26,9 +26,6 @@ import {SeenIcon} from "./Components/Svg/SeenIcon/component";
 import {toDateInHumanFormat, toDateInUsFormat} from "./utils/date/dates";
 
 function App() {
-  const silentSound = new Audio(require('./sounds/silent_audio.mp3'));
-  silentSound.loop = true;
-
   let senderTypingSound = useRef(new Audio(require('./sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
 
@@ -128,7 +125,6 @@ function App() {
         setTimeout(() => {
           receiverTypingSound.current.pause()
           receiverTypingSound.current.currentTime = 0;
-          // receiverTypingSound.muted = true
           sendMessage({
             text: message.text,
             received: true,
@@ -152,7 +148,6 @@ function App() {
 
       const simulateTypingMessage = (message: Message) => {
         senderTypingSound.current.play();
-        // senderTypingSound.muted = false;
         let index = 0;
 
         const scrollToBottom = () => {
@@ -169,8 +164,7 @@ function App() {
           } else {
             // End sound after a message is complete
             senderTypingSound.current.pause()
-            // senderTypingSound.muted = true
-            silentSound.play()
+
             // Wait, then move to the next message
             setTimeout(() => {
               sendMessage({
@@ -296,6 +290,18 @@ function App() {
   }, [recordedChunks])
 
   function resetAudioElements() {
+    senderTypingSound.current.pause();
+    senderTypingSound.current.currentTime = 0
+
+    receiverTypingSound.current.pause();
+    receiverTypingSound.current.currentTime = 0
+
+    messageReceivedSound.current.pause();
+    messageReceivedSound.current.currentTime = 0
+
+    messageSentSound.current.pause();
+    messageSentSound.current.currentTime = 0
+
     senderTypingSound.current.remove();
     receiverTypingSound.current.remove();
     messageReceivedSound.current.remove();
@@ -344,7 +350,7 @@ function App() {
           const sourceNode = audioContext.createMediaElementSource(audioElement);
           sourceNode.connect(mixedOutput);
           sourceNode.connect(audioContext.destination);
-          return sourceNode; // Store the source node
+          return sourceNode;
         } catch (error) {
           console.log(`Error creating node ${key}`, error)
         }
