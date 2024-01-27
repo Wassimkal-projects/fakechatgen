@@ -93,6 +93,7 @@ function App() {
     setMessages([])
     setRecordedChunks([])
   }
+
   const sendMessage = useCallback((message: Message) => {
     let newMessage = {
       received: message.received,
@@ -150,6 +151,7 @@ function App() {
 
       const simulateTypingMessage = (message: Message) => {
         senderTypingSound.current.play().then(() => {
+          console.log("started")
           let index = 0;
 
           const scrollToBottom = () => {
@@ -786,7 +788,11 @@ function App() {
                           onClick={() => clearConversation()}>Clear
                   </button>
                   <button disabled={simulateMessageOn} className="col btn btn-warning"
-                          onClick={() => simulateAllChat()}>Simulate
+                          onClick={() => {
+                            resetAudioElements()
+                            simulateAllChat()
+                          }
+                          }>Simulate
                   </button>
                   <button disabled={messages.length === 0 || simulateMessageOn}
                           className="col btn btn-outline-primary"
