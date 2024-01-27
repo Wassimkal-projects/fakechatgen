@@ -910,9 +910,14 @@ function App() {
                   Image
                 </button>
 
-                <button className="btn btn-info"
-                        disabled={simulateMessageOn}
-                        onClick={() => downloadRecording()}>Get video
+                <button disabled={messages.length === 0 || simulateMessageOn}
+                        className="btn btn-info"
+                        onClick={startRecording}>
+
+                  {downloadingVideo &&
+                      <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                            aria-hidden="true"/>}
+                  Get video
                 </button>
               </div>
             </div>
