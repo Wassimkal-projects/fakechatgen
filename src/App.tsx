@@ -332,29 +332,18 @@ function App() {
 
   let startRecording = () => {
     setWaitingDownload(true)
+    resetAudioElements()
 
     try {
-      //start animation
-      resetAudioElements()
-      setRecordedChunks([]);
-      simulateAllChat();
-      const canvas = document.createElement('canvas');
-
-      // Set canvas dimensions
-      // @ts-ignore
-      canvas.width = chatRef.current!.offsetWidth;
-      // @ts-ignore
-      canvas.height = chatRef.current!.offsetHeight;
-
       const audioContext = new AudioContext();
       const mixedOutput = audioContext.createMediaStreamDestination();
 
-      // capture audioc
+      // capture audio
       // Function to create and connect source nodes
       const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
         try {
           const sourceNode = audioContext.createMediaElementSource(audioElement);
-          sourceNode.connect(mixedOutput);
+          sourceNode.connect(mixedOutput!);
           sourceNode.connect(audioContext.destination);
           return sourceNode;
         } catch (error) {
@@ -368,6 +357,18 @@ function App() {
       getOrCreateSourceNode(messageSentSound.current, 'messageSent');
       getOrCreateSourceNode(messageReceivedSound.current, 'messageReceived');
 
+      //start animation
+      setRecordedChunks([]);
+      simulateAllChat();
+
+      const canvas = document.createElement('canvas');
+
+      // Set canvas dimensions
+      // @ts-ignore
+      canvas.width = chatRef.current!.offsetWidth;
+      // @ts-ignore
+      canvas.height = chatRef.current!.offsetHeight;
+
       // Capture the stream from the canvas with the desired frame rate
       // @ts-ignore
       canvasStreamRef.current = canvas.captureStream(60); // Specify the frame rate here, e.g., 30 FPS
@@ -376,7 +377,7 @@ function App() {
       const combinedStream = new MediaStream([
         // @ts-ignore
         ...canvasStreamRef.current.getVideoTracks(),
-        ...mixedOutput.stream.getAudioTracks(),
+        ...mixedOutput!.stream.getAudioTracks(),
       ]);
 
       const mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
