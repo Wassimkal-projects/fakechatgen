@@ -57,6 +57,7 @@ function App() {
   const [receiverName, setReceiverName] = useState('John Doe');
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
+  const [downloadingVideo, setDownloadingVideo] = useState(false)
   const [inputKey, setInputKey] = useState(Date.now());
   const chatRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -115,6 +116,13 @@ function App() {
       setInputMessage('')
     }
   }, [messages])
+
+  useEffect(() => {
+        if (!simulateMessageOn) {
+          setDownloadingVideo(false)
+        }
+      },
+      [simulateMessageOn])
 
   useEffect(() => {
     try {
@@ -333,6 +341,7 @@ function App() {
   }, [downloadRecording, recordedChunks, waitingDownload])
 
   let startRecording = () => {
+    setDownloadingVideo(true)
     setWaitingDownload(true)
     resetAudioElements()
 
@@ -767,7 +776,7 @@ function App() {
 
                 <div className={"messages-input"}>
                   <div className={"row px-3"}>
-                    <button className="col btn btn-primary"
+                    <button className="col btn btn-success"
                             onClick={() => {
                               sendMessage({
                                 text: inputMessage,
@@ -783,11 +792,11 @@ function App() {
                     </button>
                   </div>
                 </div>
-                <div className={"row px-3"}>
+                <div className={"row px-3 gap-2"}>
                   <button disabled={simulateMessageOn} className="col btn btn-danger"
                           onClick={() => clearConversation()}>Clear
                   </button>
-                  <button disabled={simulateMessageOn} className="col btn btn-warning"
+                  <button disabled={simulateMessageOn} className="col btn btn-primary"
                           onClick={() => {
                             resetAudioElements()
                             simulateAllChat()
@@ -795,97 +804,115 @@ function App() {
                           }>Simulate
                   </button>
                   <button disabled={messages.length === 0 || simulateMessageOn}
-                          className="col btn btn-outline-primary"
-                          onClick={startRecording}>{waitingDownload ? `${((messages.length / messagesSim.length) * 100).toFixed(2)}%` : "Download as video"}
+                          className="col btn btn-info"
+                          onClick={startRecording}>
+
+                    {downloadingVideo &&
+                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                              aria-hidden="true"/>}
+                    Get video
                   </button>
                 </div>
               </div>
             </div>
             <div className="col">
-              <div ref={chatRef} className="chat-container">
-                {showHeaderChecked && <div className="phone-top-bar">
-                  <span className="time">{time} am</span>
-                  <span className="network-status">
+              <div className={"chat-blurry-container"}>
+                <div ref={chatRef} className={`chat-container ${downloadingVideo ? 'blur' : ''}`}>
+                  {showHeaderChecked && <div className="phone-top-bar">
+                    <span className="time">{time} am</span>
+                    <span className="network-status">
                   <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
-                    {showPercentageChecked && <span>50%</span>}
-                    <FontAwesomeIcon icon={faBatteryHalf}/>
+                      {showPercentageChecked && <span>50%</span>}
+                      <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
 
-                </div>}
-                <div className="whatsapp-header">
-                  <div className="pic-and-name">
+                  </div>}
+                  <div className="whatsapp-header">
+                    <div className="pic-and-name">
                   <span className={"whatsapp-actions center-icon"}>
                   <FontAwesomeIcon icon={faArrowLeft}/>
                   </span>
-                    <img className="profile-pic" src={setProfilePictureSrcState[0]}
-                         alt="alt-profile" crossOrigin="anonymous"
-                         onClick={() => pdpState[1](true)}/>
-                    <div className="name-and-status">
-                      <span className={"name-text"}>{receiverName}</span>
-                      <span className={"status-text"}>{receiverStatus}</span>
+                      <img className="profile-pic" src={setProfilePictureSrcState[0]}
+                           alt="alt-profile" crossOrigin="anonymous"
+                           onClick={() => pdpState[1](true)}/>
+                      <div className="name-and-status">
+                        <span className={"name-text"}>{receiverName}</span>
+                        <span className={"status-text"}>{receiverStatus}</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="whatsapp-actions">
+                    <div className="whatsapp-actions">
                     <span><FontAwesomeIcon
                         icon={faVideoCamera}/></span>
-                    <span><FontAwesomeIcon icon={faPhone}/></span>
-                    <span><FontAwesomeIcon icon={faEllipsisV}/></span>
-                  </div>
-                </div>
-                <div className="chat-messages" id="chatMessages">
-                  {messages.map((message, index) => {
-                    return (
-                        <MessageComponent
-                            key={index}
-                            index={index}
-                            message={message}
-                            updateMessage={(action, message) => updateMessage(action, index, message)}
-                            messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
-                            simulateMessageOn={simulateMessageOn}/>
-                    )
-                  })}
-                  <div ref={endOfMessagesRef}/>
-                </div>
-                {<div className="message-bar">
-                  <div className="message-input">
-                    <div className={"emoji-container"}>
-                      <span className={"icon-emoji center-icon"}/>
-                    </div>
-                    <div id="messageInput"
-                         className={"editable-div"}
-                         contentEditable="false"
-                         role="textbox"
-                         aria-multiline="false"
-                         data-placeholder="Type a message"
-                    />
-                    <div className={"right-input"}>
-                      <div className={"emoji-container"}>
-                        <span className={"icon-clip center-icon"}/>
-                      </div>
-                      <div className={"emoji-container"}>
-                        <span className={"icon-camera center-icon"}/>
-                      </div>
+                      <span><FontAwesomeIcon icon={faPhone}/></span>
+                      <span><FontAwesomeIcon icon={faEllipsisV}/></span>
                     </div>
                   </div>
-                  <span className={"whatsapp-actions"}>
+                  <div className="chat-messages" id="chatMessages">
+                    {messages.map((message, index) => {
+                      return (
+                          <MessageComponent
+                              key={index}
+                              index={index}
+                              message={message}
+                              updateMessage={(action, message) => updateMessage(action, index, message)}
+                              messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
+                              simulateMessageOn={simulateMessageOn}/>
+                      )
+                    })}
+                    <div ref={endOfMessagesRef}/>
+                  </div>
+                  {<div className="message-bar">
+                    <div className="message-input">
+                      <div className={"emoji-container"}>
+                        <span className={"icon-emoji center-icon"}/>
+                      </div>
+                      <div id="messageInput"
+                           className={"editable-div"}
+                           contentEditable="false"
+                           role="textbox"
+                           aria-multiline="false"
+                           data-placeholder="Type a message"
+                      />
+                      <div className={"right-input"}>
+                        <div className={"emoji-container"}>
+                          <span className={"icon-clip center-icon"}/>
+                        </div>
+                        <div className={"emoji-container"}>
+                          <span className={"icon-camera center-icon"}/>
+                        </div>
+                      </div>
+                    </div>
+                    <span className={"whatsapp-actions"}>
                   <div className={"emoji-container"}>
                   <span className={"icon-microphone center-icon"}/>
                   </div>
                   </span>
 
 
-                </div>}
+                  </div>}
+                </div>
+                {downloadingVideo && (
+                    <div className="spinner-container">
+                      <div className="d-flex flex-column align-items-center">
+                        <div className="spinner-border" role="status">
+                          <span className="sr-only">Loading...</span>
+                        </div>
+                        <strong>{`Loading ${messages.length}/${messagesSim.length}`}</strong>
+                      </div>
+                    </div>
+
+                )}
               </div>
               <div className={"generate-buttons"}>
-                <button className="btn btn-secondary" onClick={() => downloadImage()}
+                <button className="btn btn-primary" onClick={() => downloadImage()}
                         disabled={simulateMessageOn}>Download as
                   Image
                 </button>
 
-                <button className="btn btn-success"
+                <button className="btn btn-info"
                         disabled={simulateMessageOn}
-                        onClick={() => downloadRecording()}>Download as video
+                        onClick={() => downloadRecording()}>Get video
                 </button>
               </div>
             </div>

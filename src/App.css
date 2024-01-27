@@ -355,6 +355,29 @@ body {
   color: #8696a0
 }
 
+/**/
+.chat-blurry-container {
+  position: relative;
+}
+
+.blur {
+  filter: blur(10px); /* Add your desired blur effect here */
+  pointer-events: none;
+}
+
+.spinner-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999; /* Ensure the spinner is on top of other content */
+}
+
+/**/
 @media (max-width: 800px) {
   .main-page {
     flex-direction: column;
