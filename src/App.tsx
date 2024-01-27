@@ -119,76 +119,81 @@ function App() {
     try {
       // functions
       const simulateReceivingMessage = (message: Message) => {
-        setReceiverStatus('Typing')
-        // receiverTypingSound.muted = false
-        receiverTypingSound.current.play()
-        setTimeout(() => {
-          receiverTypingSound.current.pause()
-          receiverTypingSound.current.currentTime = 0;
-          sendMessage({
-            text: message.text,
-            received: true,
-            imageMessage: message.imageMessage,
-            status: message.status,
-            displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
-            messageTime: message.messageTime,
-            messageDate: message.messageDate
-          })
-          messageReceivedSound.current.play();
-          setReceiverStatus('Online')
-          setCurrentMessageIndex(currentMessageIndex + 1);
-          if (currentMessageIndex === messagesSim.length - 1) {
-            setTimeout(() => {
-              setSimulateMessageOn(false)
-              stopRecording();
-            }, 2000)
-          }
-        }, responseTime)
+        receiverTypingSound.current.play().then(() => {
+          setReceiverStatus('Typing')
+          setTimeout(() => {
+            receiverTypingSound.current.pause()
+            receiverTypingSound.current.currentTime = 0;
+            sendMessage({
+              text: message.text,
+              received: true,
+              imageMessage: message.imageMessage,
+              status: message.status,
+              displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
+              messageTime: message.messageTime,
+              messageDate: message.messageDate
+            })
+            messageReceivedSound.current.play().then(() => {
+              setReceiverStatus('Online')
+              setCurrentMessageIndex(currentMessageIndex + 1);
+            });
+
+            if (currentMessageIndex === messagesSim.length - 1) {
+              setTimeout(() => {
+                setSimulateMessageOn(false)
+                stopRecording();
+              }, 2000)
+            }
+          }, responseTime)
+        })
       }
 
       const simulateTypingMessage = (message: Message) => {
-        senderTypingSound.current.play();
-        let index = 0;
+        senderTypingSound.current.play().then(() => {
+          let index = 0;
 
-        const scrollToBottom = () => {
-          //TODO make it conditional to the length
-          input!.scrollTop = input!.scrollHeight;
-        }
-
-        const typeChar = () => {
-          if (index < message.text!.length) {
-            input!.textContent = input!.textContent + message.text!.charAt(index);
-            scrollToBottom();
-            index++;
-            setTimeout(typeChar, typingSpeed);
-          } else {
-            // End sound after a message is complete
-            senderTypingSound.current.pause()
-
-            // Wait, then move to the next message
-            setTimeout(() => {
-              sendMessage({
-                displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
-                text: input!.textContent!,
-                received: false,
-                imageMessage: message.imageMessage,
-                status: message.status,
-                messageTime: message.messageTime,
-                messageDate: message.messageDate
-              })
-              input!.textContent = '';
-              messageSentSound.current.play();
-              setCurrentMessageIndex(currentMessageIndex + 1);
-              if (currentMessageIndex === messagesSim.length - 1) {
-                setTimeout(() => {
-                  setSimulateMessageOn(false)
-                  stopRecording();
-                }, 2000)
-              }
-            }, delayBetweenMessages);
+          const scrollToBottom = () => {
+            //TODO make it conditional to the length
+            input!.scrollTop = input!.scrollHeight;
           }
-        };
-        typeChar();
+
+          const typeChar = () => {
+            if (index < message.text!.length) {
+              input!.textContent = input!.textContent + message.text!.charAt(index);
+              scrollToBottom();
+              index++;
+              setTimeout(typeChar, typingSpeed);
+            } else {
+              // End sound after a message is complete
+              senderTypingSound.current.pause()
+
+              // Wait, then move to the next message
+              setTimeout(() => {
+                sendMessage({
+                  displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
+                  text: input!.textContent!,
+                  received: false,
+                  imageMessage: message.imageMessage,
+                  status: message.status,
+                  messageTime: message.messageTime,
+                  messageDate: message.messageDate
+                })
+                input!.textContent = '';
+                messageSentSound.current.play().then(() => {
+                  setCurrentMessageIndex(currentMessageIndex + 1);
+                });
+                if (currentMessageIndex === messagesSim.length - 1) {
+                  setTimeout(() => {
+                    setSimulateMessageOn(false)
+                    stopRecording();
+                  }, 2000)
+                }
+              }, delayBetweenMessages);
+            }
+          };
+          typeChar();
+        });
+
       }
 
       const simulateSendingImage = (message: Message) => {
