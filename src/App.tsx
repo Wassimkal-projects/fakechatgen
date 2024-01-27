@@ -289,7 +289,7 @@ function App() {
     window.URL.revokeObjectURL(url);
   }, [recordedChunks])
 
-  function resetAudioElements() {
+  const resetAudioElements = () => {
     senderTypingSound.current.pause();
     senderTypingSound.current.currentTime = 0
 
@@ -330,6 +330,7 @@ function App() {
 
     try {
       //start animation
+      resetAudioElements()
       setRecordedChunks([]);
       simulateAllChat();
       const canvas = document.createElement('canvas');
@@ -387,7 +388,6 @@ function App() {
         if (event.data.size > 0) {
           setRecordedChunks(prev => [...prev, event.data]);
         }
-        resetAudioElements()
       };
 
       // @ts-ignore
