@@ -25,6 +25,16 @@ import {SendingIcon} from "./Components/Svg/SendingIcon/component";
 import {SeenIcon} from "./Components/Svg/SeenIcon/component";
 import {toDateInHumanFormat, toDateInUsFormat} from "./utils/date/dates";
 
+import {FFmpeg} from "@ffmpeg/ffmpeg"
+import {fetchFile} from "@ffmpeg/util";
+
+const ffmpeg = new FFmpeg()
+
+interface VideoFrame {
+  frame: Blob | null;
+  duration: number;
+}
+
 function App() {
   let senderTypingSound = useRef(new Audio(require('./sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
@@ -43,6 +53,7 @@ function App() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesSim, setMessagesSim] = useState<Message[]>([]);
+  const [frameIndex, setFrameIndex] = useState<number>(0);
 
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
@@ -70,10 +81,12 @@ function App() {
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
   const [waitingDownload, setWaitingDownload] = useState<boolean>(false)
+  const [videoFrames, setVideoFrames] = useState<VideoFrame[]>([]);
 
   const [time, setTime] = useState<string>('15:11')
   const [messageTime, setMessageTime] = useState<string>('15:11')
-  const [activeTab, setActiveTab] = useState('person1'); // default to the first tab
+  const [activeTab, setActiveTab] = useState('person1'); // default tab to the first person
+  const canvas = document.createElement('canvas');
 
   const handleTabSelect = (key: any) => {
     setActiveTab(key);
@@ -93,6 +106,7 @@ function App() {
   const clearConversation = () => {
     setMessages([])
     setRecordedChunks([])
+    setVideoFrames([])
   }
 
   const sendMessage = useCallback((message: Message) => {
@@ -124,6 +138,14 @@ function App() {
       },
       [simulateMessageOn])
 
+  // useEffect to capture a frame with "Typing"
+  useEffect(() => {
+    if (receiverStatus === 'Typing') {
+      captureFrameFbF(delayBetweenMessages)
+    }
+  }, [receiverStatus])
+
+  // useEffect to simulate the chat
   useEffect(() => {
     try {
       // functions
@@ -172,7 +194,10 @@ function App() {
               input!.textContent = input!.textContent + message.text!.charAt(index);
               scrollToBottom();
               index++;
-              setTimeout(typeChar, typingSpeed);
+              setTimeout(() => {
+                captureFrameFbF(typingSpeed)
+                typeChar()
+              }, typingSpeed);
             } else {
               // End sound after a message is complete
               senderTypingSound.current.pause()
@@ -232,6 +257,9 @@ function App() {
         }
       }
 
+      // Add frame of delay between messages
+      captureFrameFbF(delayBetweenMessages)
+
       if (isTyping && currentMessageIndex < messagesSim.length) {
         setTimeout(() => {
           const message = messagesSim[currentMessageIndex];
@@ -240,6 +268,7 @@ function App() {
               simulateTypingMessage(message)
             } else if (message.imageMessage) {
               simulateSendingImage(message)
+              captureFrameFbF(delayBetweenMessages)
             }
           } else {
             if (message.text) {
@@ -286,6 +315,7 @@ function App() {
     setMessagesSim(
         messages.map(message => message)
     )
+
     setMessages([])
     if (!isTyping) {
       setIsTyping(true);
@@ -294,9 +324,11 @@ function App() {
     }
   };
 
-  const downloadRecording = useCallback(() => {
+  const downloadRecording = useCallback((url?: string) => {
     const blob = new Blob(recordedChunks, {type: 'video/mp4'});
-    const url = URL.createObjectURL(blob);
+    if (!url) {
+      url = URL.createObjectURL(blob);
+    }
     const a = document.createElement('a');
     a.href = url;
     a.download = 'recording.mp4';
@@ -334,13 +366,18 @@ function App() {
   }
 
   useEffect(() => {
-    if (waitingDownload && recordedChunks.length !== 0) {
-      downloadRecording()
+    console.log("try to download")
+    console.log("waiting dowloading", waitingDownload)
+    console.log("videoFrames.length", videoFrames.length)
+    if (waitingDownload && videoFrames.length !== 0) {
+      // downloadRecording()
+      convertFramesToVideo()
       setWaitingDownload(false)
     }
   }, [downloadRecording, recordedChunks, waitingDownload])
 
   let startRecording = () => {
+    setVideoFrames([])
     setDownloadingVideo(true)
     setWaitingDownload(true)
     resetAudioElements()
@@ -363,16 +400,14 @@ function App() {
       };
 
       // Use current audio elements to create and connect source nodes
-      getOrCreateSourceNode(receiverTypingSound.current, 'receiverTyping');
-      getOrCreateSourceNode(senderTypingSound.current, 'senderTyping');
-      getOrCreateSourceNode(messageSentSound.current, 'messageSent');
-      getOrCreateSourceNode(messageReceivedSound.current, 'messageReceived');
+      /*      getOrCreateSourceNode(receiverTypingSound.current, 'receiverTyping');
+            getOrCreateSourceNode(senderTypingSound.current, 'senderTyping');
+            getOrCreateSourceNode(messageSentSound.current, 'messageSent');
+            getOrCreateSourceNode(messageReceivedSound.current, 'messageReceived');*/
 
       //start animation
       setRecordedChunks([]);
       simulateAllChat();
-
-      const canvas = document.createElement('canvas');
 
       // Set canvas dimensions
       // @ts-ignore
@@ -382,13 +417,13 @@ function App() {
 
       // Capture the stream from the canvas with the desired frame rate
       // @ts-ignore
-      canvasStreamRef.current = canvas.captureStream(60); // Specify the frame rate here, e.g., 30 FPS
+      canvasStreamRef.current = canvas.captureStream(30); // Specify the frame rate here, e.g., 30 FPS
 
       // Combine audio and canvas streams
       const combinedStream = new MediaStream([
         // @ts-ignore
         ...canvasStreamRef.current.getVideoTracks(),
-        ...mixedOutput!.stream.getAudioTracks(),
+        // ...mixedOutput!.stream.getAudioTracks(),
       ]);
 
       const mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
@@ -411,7 +446,7 @@ function App() {
       mediaRecorderRef.current.start();
 
       // Capture the frame (assuming this is a function defined elsewhere in your code)
-      captureFrame(scaleCanvasImage(canvas));
+      captureFrameFbF()
 
     } catch (error) {
       console.log("Error log from startRecording", error);
@@ -441,11 +476,117 @@ function App() {
         // Adjust the timeout to allow for better performance
         // @ts-ignore
         canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
+        //TODO refacto tout çaaaa
         setTimeout(() => captureFrame(canvas), 1000 / 60) // Try a lower frame rate
       } catch (error) {
         console.log("Error from capture frame", error)
       }
     }
+  };
+
+  const captureWaitingFrames = (waitingTime: number) => {
+    // 10 f/s => 1 s
+    // x f/s => waitingTime
+    // => x = waitingTime / f/s
+    const numberOfFrames = waitingTime / 10
+
+  }
+
+  const captureFrameFbF = async (frameDuration?: number) => {
+    if (chatRef.current) {
+      try {
+        console.log("capture frame fbf")
+        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
+        capturedCanvas.toBlob(blob => {
+          setVideoFrames((videoFrames) => [...videoFrames, {
+            frame: blob,
+            duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
+          }]);
+        }, 'image/jpeg', 0.95); // Adjust quality as needed
+        /*        const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+
+                // @ts-ignore
+                canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*/
+      } catch (error) {
+        console.log("Error from capture frame", error)
+      }
+    }
+    return false
+  };
+
+  /*  const convertFramesToVideo = async () => {
+      console.log("convertFramesToVideo")
+      // Load the FFmpeg core
+      await ffmpeg.load();
+
+      // Write frames to FFmpeg's virtual file system
+      for (let index = 0; index < videoFrames.length; index++) {
+        const frame = videoFrames[index];
+        const data = await fetchFile(frame!);
+        await ffmpeg.writeFile(`frame${index}.jpg`, data);
+      }
+
+      // Execute the FFmpeg command to convert the images to a video
+      await ffmpeg.exec(['-framerate', '10', '-i', 'frame%01d.jpg', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', 'out.mp4']);
+
+      // Read the generated video file from the virtual file system
+      const data = await ffmpeg.readFile('out.mp4');
+
+      // Create a URL for the video file
+      const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
+      console.log("videoUrl", videoURL)
+
+      // Use this videoURL to display the video or download it
+      downloadRecording(videoURL);
+    };*/
+
+  const convertFramesToVideo = async () => {
+    console.log("convertFramesToVideo");
+    // Load the FFmpeg core
+    await ffmpeg.load();
+
+    // Initialize a variable to store the concat demuxer file content
+    let concatFileContent = '';
+
+    // Write frames to FFmpeg's virtual file system and build the concat file content
+    for (let index = 0; index < videoFrames.length; index++) {
+      const videoFrame = videoFrames[index];
+      const data = await fetchFile(videoFrame.frame!);
+      await ffmpeg.writeFile(`frame${index}.jpg`, data);
+
+      // Add each frame and its duration to the concat file content
+      // Assuming each image should be displayed for 2 seconds
+      concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
+    }
+
+    // Add the last file again without specifying duration to avoid freezing on the last frame
+    if (videoFrames.length > 0) {
+      concatFileContent += `file 'frame${videoFrames.length - 1}.jpg'\n`;
+    }
+
+    // Write the concat file content to FFmpeg's virtual file system
+    await ffmpeg.writeFile('input.txt', concatFileContent);
+
+    // Execute the FFmpeg command using the concat demuxer to convert the images to a video
+    await ffmpeg.exec([
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', 'input.txt',
+      '-vsync', 'vfr',
+      '-pix_fmt', 'yuv420p',
+      'out.mp4'
+    ]);
+
+    // Read the generated video file from the virtual file system
+    const data = await ffmpeg.readFile('out.mp4');
+
+    // Create a URL for the video file
+    const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
+    console.log("videoUrl", videoURL);
+
+    // Use this videoURL to display the video or download it
+    downloadRecording(videoURL);
   };
 
   const stopRecording = () => {
@@ -811,6 +952,15 @@ function App() {
                         <span className="spinner-grow spinner-grow-sm mx-2" role="status"
                               aria-hidden="true"/>}
                     Get video
+                  </button>
+                  <button disabled={messages.length === 0 || simulateMessageOn}
+                          className="col btn btn-info"
+                          onClick={convertFramesToVideo}>
+
+                    {downloadingVideo &&
+                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                              aria-hidden="true"/>}
+                    Download
                   </button>
                 </div>
               </div>
