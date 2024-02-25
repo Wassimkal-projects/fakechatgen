@@ -53,7 +53,6 @@ function App() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesSim, setMessagesSim] = useState<Message[]>([]);
-  const [frameIndex, setFrameIndex] = useState<number>(0);
 
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
@@ -80,7 +79,7 @@ function App() {
   const [network, setNetwork] = useState<string>('5G')
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
-  const [waitingDownload, setWaitingDownload] = useState<boolean>(false)
+  // const [waitingDownload, setWaitingDownload] = useState<boolean>(false)
   const [videoFrames, setVideoFrames] = useState<VideoFrame[]>([]);
 
   const [time, setTime] = useState<string>('15:11')
@@ -365,39 +364,41 @@ function App() {
     receiverTypingSound.current.loop = true;
   }
 
-  useEffect(() => {
-    console.log("try to download")
-    console.log("waiting dowloading", waitingDownload)
-    console.log("videoFrames.length", videoFrames.length)
-    if (waitingDownload && videoFrames.length !== 0) {
-      // downloadRecording()
-      convertFramesToVideo()
-      setWaitingDownload(false)
-    }
-  }, [downloadRecording, recordedChunks, waitingDownload])
+  /*
+    useEffect(() => {
+      console.log("try to download")
+      console.log("waiting dowloading", waitingDownload)
+      console.log("videoFrames.length", videoFrames.length)
+      if (waitingDownload && videoFrames.length !== 0) {
+        // downloadRecording()
+        convertFramesToVideo()
+        setWaitingDownload(false)
+      }
+    }, [downloadRecording, recordedChunks, waitingDownload])
+  */
 
   let startRecording = () => {
     setVideoFrames([])
     setDownloadingVideo(true)
-    setWaitingDownload(true)
+    // setWaitingDownload(true)
     resetAudioElements()
 
     try {
-      const audioContext = new AudioContext();
-      const mixedOutput = audioContext.createMediaStreamDestination();
+      // const audioContext = new AudioContext();
+      // const mixedOutput = audioContext.createMediaStreamDestination();
 
       // capture audio
       // Function to create and connect source nodes
-      const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
-        try {
-          const sourceNode = audioContext.createMediaElementSource(audioElement);
-          sourceNode.connect(mixedOutput!);
-          sourceNode.connect(audioContext.destination);
-          return sourceNode;
-        } catch (error) {
-          console.log(`Error creating node ${key}`, error)
-        }
-      };
+      /*      const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
+              try {
+                const sourceNode = audioContext.createMediaElementSource(audioElement);
+                sourceNode.connect(mixedOutput!);
+                sourceNode.connect(audioContext.destination);
+                return sourceNode;
+              } catch (error) {
+                console.log(`Error creating node ${key}`, error)
+              }
+            };*/
 
       // Use current audio elements to create and connect source nodes
       /*      getOrCreateSourceNode(receiverTypingSound.current, 'receiverTyping');
@@ -453,16 +454,16 @@ function App() {
     }
   }
 
-  const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
+  /*const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
     const scaleBy = 1.5;
     const w = canvas.width;
     const h = canvas.height;
     canvas.width = w * scaleBy;
     canvas.height = h * scaleBy;
     return canvas;
-  }
+  }*/
 
-  const captureFrame = async (canvas: HTMLCanvasElement) => {
+  /*const captureFrame = async (canvas: HTMLCanvasElement) => {
     // @ts-ignore
     if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
       return;
@@ -482,15 +483,7 @@ function App() {
         console.log("Error from capture frame", error)
       }
     }
-  };
-
-  const captureWaitingFrames = (waitingTime: number) => {
-    // 10 f/s => 1 s
-    // x f/s => waitingTime
-    // => x = waitingTime / f/s
-    const numberOfFrames = waitingTime / 10
-
-  }
+  };*/
 
   const captureFrameFbF = async (frameDuration?: number) => {
     if (chatRef.current) {
