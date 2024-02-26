@@ -25,14 +25,25 @@ import {SendingIcon} from "./Components/Svg/SendingIcon/component";
 import {SeenIcon} from "./Components/Svg/SeenIcon/component";
 import {toDateInHumanFormat, toDateInUsFormat} from "./utils/date/dates";
 
+// @ts-ignore
 import {FFmpeg} from "@ffmpeg/ffmpeg"
+// @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 
 const ffmpeg = new FFmpeg()
 
+enum FrameType {
+  CHAR_TYPE,
+  RECEIVER_TYPING,
+  MESSAGE_SENT,
+  MESSAGE_RECEIVED,
+  SILENT
+}
+
 interface VideoFrame {
   frame: Blob | null;
   duration: number;
+  frameType: FrameType
 }
 
 function App() {
@@ -140,7 +151,7 @@ function App() {
   // useEffect to capture a frame with "Typing"
   useEffect(() => {
     if (receiverStatus === 'Typing') {
-      captureFrameFbF(delayBetweenMessages)
+      captureFrameFbF(FrameType.RECEIVER_TYPING, delayBetweenMessages)
     }
   }, [receiverStatus])
 
@@ -180,7 +191,6 @@ function App() {
 
       const simulateTypingMessage = (message: Message) => {
         senderTypingSound.current.play().then(() => {
-          console.log("started")
           let index = 0;
 
           const scrollToBottom = () => {
@@ -194,7 +204,7 @@ function App() {
               scrollToBottom();
               index++;
               setTimeout(() => {
-                captureFrameFbF(typingSpeed)
+                captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
                 typeChar()
               }, typingSpeed);
             } else {
@@ -257,7 +267,17 @@ function App() {
       }
 
       // Add frame of delay between messages
-      captureFrameFbF(delayBetweenMessages)
+      let frameType = FrameType.SILENT;
+      if (currentMessageIndex > 0) {
+        if (messagesSim[currentMessageIndex - 1].received || messagesSim[currentMessageIndex - 1].imageMessage) {
+          frameType = FrameType.MESSAGE_RECEIVED
+        }
+        if (!messagesSim[currentMessageIndex - 1].received || messagesSim[currentMessageIndex - 1].imageMessage) {
+          frameType = FrameType.MESSAGE_SENT
+        }
+      }
+
+      captureFrameFbF(frameType, delayBetweenMessages)
 
       if (isTyping && currentMessageIndex < messagesSim.length) {
         setTimeout(() => {
@@ -267,7 +287,6 @@ function App() {
               simulateTypingMessage(message)
             } else if (message.imageMessage) {
               simulateSendingImage(message)
-              captureFrameFbF(delayBetweenMessages)
             }
           } else {
             if (message.text) {
@@ -446,8 +465,8 @@ function App() {
       // @ts-ignore
       mediaRecorderRef.current.start();
 
-      // Capture the frame (assuming this is a function defined elsewhere in your code)
-      captureFrameFbF()
+      // Capture the frame
+      // captureFrameFbF(FrameType.SILENT)
 
     } catch (error) {
       console.log("Error log from startRecording", error);
@@ -485,14 +504,19 @@ function App() {
     }
   };*/
 
-  const captureFrameFbF = async (frameDuration?: number) => {
+  const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
     if (chatRef.current) {
       try {
         console.log("capture frame fbf")
-        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
+        const capturedCanvas = await html2canvas(chatRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
         capturedCanvas.toBlob(blob => {
           setVideoFrames((videoFrames) => [...videoFrames, {
             frame: blob,
+            frameType: frameType,
             duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
           }]);
         }, 'image/jpeg', 0.95); // Adjust quality as needed
@@ -534,52 +558,159 @@ function App() {
       downloadRecording(videoURL);
     };*/
 
+  ffmpeg.on("log", ({type, message}) => {
+    console.log("ffmpeg type", type)
+    console.log("ffmpeg message", message)
+  })
+  ffmpeg.on("progress", ({progress, time}) => {
+    console.log("ffmpeg progress", progress)
+    console.log("ffmpeg message", time)
+  })
+
+  const getConsecutiveOccurrences = (list: FrameType[]): { value: FrameType, index: number, count: number }[] => {
+    const result: Array<{ value: FrameType, index: number, count: number }> = [];
+    let current = list[0];
+    let count = 1;
+    let index = 0;
+
+    for (let i = 1; i <= list.length; i++) {
+      if (list[i] === current && i < list.length) {
+        count++;
+      } else {
+        result.push({value: current, index: index, count: count});
+        current = list[i];
+        index = i;
+        count = 1;
+      }
+    }
+
+    return result;
+  }
+
   const convertFramesToVideo = async () => {
-    console.log("convertFramesToVideo");
-    // Load the FFmpeg core
-    await ffmpeg.load();
+    try {
+      console.log("convertFramesToVideo");
+      // Load the FFmpeg core
+      await ffmpeg.load();
 
-    // Initialize a variable to store the concat demuxer file content
-    let concatFileContent = '';
+      // Initialize a variable to store the concat demuxer file content
+      let concatFileContent = '';
 
-    // Write frames to FFmpeg's virtual file system and build the concat file content
-    for (let index = 0; index < videoFrames.length; index++) {
-      const videoFrame = videoFrames[index];
-      const data = await fetchFile(videoFrame.frame!);
-      await ffmpeg.writeFile(`frame${index}.jpg`, data);
+      // interactions strats after 1 second,
+      let videoTime = 0;
+      let filterComplex = '';
+      let audioMix: string[] = [];
+      let maps: string[] = ['-map', '[v]'];
+      const timeAndDuration = getConsecutiveOccurrences(videoFrames.map(frame => frame.frameType))
 
-      // Add each frame and its duration to the concat file content
-      // Assuming each image should be displayed for 2 seconds
-      concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
+      timeAndDuration.forEach((timeAndDuration, index) => {
+        if (timeAndDuration.value === FrameType.SILENT) {
+          videoTime += timeAndDuration.count * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
+        }
+        if (timeAndDuration.value === FrameType.CHAR_TYPE) {
+          const duration = (timeAndDuration.count * typingSpeed)
+          // filterComplex += `;[1:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          const loopXtimes = Math.ceil(duration / 200)
+          filterComplex += `;[1:a]aloop=loop=${loopXtimes - 1}:size=2e+09,adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        }
+        if (timeAndDuration.value === FrameType.MESSAGE_SENT) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[2:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        }
+        if (timeAndDuration.value === FrameType.RECEIVER_TYPING) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[4:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        }
+        if (timeAndDuration.value === FrameType.MESSAGE_RECEIVED) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[3:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        }
+
+      })
+      // Write frames to FFmpeg's virtual file system and build the concat file content
+      for (let index = 0; index < videoFrames.length; index++) {
+        const videoFrame = videoFrames[index];
+        const data = await fetchFile(videoFrame.frame!);
+        await ffmpeg.writeFile(`frame${index}.jpg`, data);
+
+        // Add each frame and its duration to the concat file content
+        // Assuming each image should be displayed for 2 seconds
+        concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
+
+        // input 1 senderTyping
+        // input 2 messageSent
+        // input 3 messageReceivedSound
+        // input 4 receiverTypingSound
+      }
+
+      // Add the last file again without specifying duration to avoid freezing on the last frame
+      if (videoFrames.length > 0) {
+        concatFileContent += `file 'frame${videoFrames.length - 1}.jpg'\n`;
+      }
+
+      // Write the concat file content to FFmpeg's virtual file system
+      await ffmpeg.writeFile('input.txt', concatFileContent);
+
+      // Write audio files, assuming they are accessible similar to videoFrames
+      const senderTypingSound = await fetchFile(require('./sounds/typing_sound_whatsapp_200ms.mp3'));
+      let messageSentSound = await fetchFile(require('./sounds/sent_sound_whatsapp.mp3'));
+      let messageReceivedSound = await fetchFile(require('./sounds/message_received.mp3'));
+      let receiverTypingSound = await fetchFile(require('./sounds/is_writing_whatsapp_original_2s.mp3'));
+      await ffmpeg.writeFile('sender_typing_sound.mp3', senderTypingSound);
+      await ffmpeg.writeFile('message_sent.mp3', messageSentSound);
+      await ffmpeg.writeFile('message_received.mp3', messageReceivedSound);
+      await ffmpeg.writeFile('receiver_typing_sound.mp3', receiverTypingSound);
+
+      // filterComplex = '[0:v]setpts=PTS-STARTPTS[v];[1:a]adelay=1000|1000,aloop=loop=-1:size=2e+09,atrim=duration=3.5,asetpts=N/SR/TB[aud1]';
+      filterComplex = '[0:v]setpts=PTS-STARTPTS[v]' + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
+      console.log('filterCompleeeex', filterComplex)
+      console.log('maps', maps)
+      // Execute the FFmpeg command using the concat demuxer to convert the images to a video
+      await ffmpeg.exec([
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', 'input.txt', // Video input from concatenated images
+        '-i', 'sender_typing_sound.mp3', // Audio input
+        '-i', 'message_sent.mp3', // Audio input
+        '-i', 'message_received.mp3', // Audio input
+        '-i', 'receiver_typing_sound.mp3', // Audio input
+        '-filter_complex', filterComplex, // Corrected filter_complex
+        /*        '-map', '[v]', // Corrected to map the video stream
+                '-map', '[aud1]', // Corrected to map the audio stream*/
+        '-map', '[v]',
+        '-map', '[audio_mix]',
+        '-shortest',
+        '-c:v', 'libx264', // Video codec
+        '-pix_fmt', 'yuv420p', // Pixel format specified once
+        '-c:a', 'aac', // Audio codec
+        'out.mp4' // Output file
+      ]);
+
+      console.log("after exec")
+
+      // Read the generated video file from the virtual file system
+      const data = await ffmpeg.readFile('out.mp4');
+
+      console.log("after readFile out.mp4")
+
+      // Create a URL for the video file
+      const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
+      console.log("videoUrl", videoURL);
+
+      // Use this videoURL to display the video or download it
+      downloadRecording(videoURL);
+      // downloadWithProgress(videoURL)
+    } catch (e) {
+      console.log(e)
     }
-
-    // Add the last file again without specifying duration to avoid freezing on the last frame
-    if (videoFrames.length > 0) {
-      concatFileContent += `file 'frame${videoFrames.length - 1}.jpg'\n`;
-    }
-
-    // Write the concat file content to FFmpeg's virtual file system
-    await ffmpeg.writeFile('input.txt', concatFileContent);
-
-    // Execute the FFmpeg command using the concat demuxer to convert the images to a video
-    await ffmpeg.exec([
-      '-f', 'concat',
-      '-safe', '0',
-      '-i', 'input.txt',
-      '-vsync', 'vfr',
-      '-pix_fmt', 'yuv420p',
-      'out.mp4'
-    ]);
-
-    // Read the generated video file from the virtual file system
-    const data = await ffmpeg.readFile('out.mp4');
-
-    // Create a URL for the video file
-    const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
-    console.log("videoUrl", videoURL);
-
-    // Use this videoURL to display the video or download it
-    downloadRecording(videoURL);
   };
 
   const stopRecording = () => {
@@ -598,7 +729,7 @@ function App() {
 
   const downloadImage = () => {
     if (chatRef.current) {
-      html2canvas(chatRef.current, {scale: 2, useCORS: true}).then((canvas) => {
+      html2canvas(chatRef.current, {scale: 2, useCORS: true, logging: false}).then((canvas) => {
         // Create an image from the canvas
         const image = canvas.toDataURL('image/png');
 
