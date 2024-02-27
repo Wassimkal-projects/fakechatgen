@@ -267,18 +267,27 @@ function App() {
       }
 
       // Add frame of delay between messages
-      let frameType = FrameType.SILENT;
-      if (currentMessageIndex > 0) {
-        if (messagesSim[currentMessageIndex - 1].received || messagesSim[currentMessageIndex - 1].imageMessage) {
-          frameType = FrameType.MESSAGE_RECEIVED
-        }
-        if (!messagesSim[currentMessageIndex - 1].received || messagesSim[currentMessageIndex - 1].imageMessage) {
-          frameType = FrameType.MESSAGE_SENT
-        }
+      if (currentMessageIndex === 0) {
+        captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
+      if (currentMessageIndex > 0 && isTyping && messagesSim.length > 0) {
+        if (messagesSim[currentMessageIndex - 1].imageMessage) {
+          setTimeout(() => {
+            if (messagesSim[currentMessageIndex - 1].received) {
+              captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
+            } else {
+              captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
+            }
+          }, 500)
+        } else {
+          if (messagesSim[currentMessageIndex - 1].received) {
+            captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
+          } else {
+            captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
+          }
+        }
 
-      captureFrameFbF(frameType, delayBetweenMessages)
-
+      }
       if (isTyping && currentMessageIndex < messagesSim.length) {
         setTimeout(() => {
           const message = messagesSim[currentMessageIndex];
@@ -383,19 +392,6 @@ function App() {
     receiverTypingSound.current.loop = true;
   }
 
-  /*
-    useEffect(() => {
-      console.log("try to download")
-      console.log("waiting dowloading", waitingDownload)
-      console.log("videoFrames.length", videoFrames.length)
-      if (waitingDownload && videoFrames.length !== 0) {
-        // downloadRecording()
-        convertFramesToVideo()
-        setWaitingDownload(false)
-      }
-    }, [downloadRecording, recordedChunks, waitingDownload])
-  */
-
   let startRecording = () => {
     setVideoFrames([])
     setDownloadingVideo(true)
@@ -403,28 +399,6 @@ function App() {
     resetAudioElements()
 
     try {
-      // const audioContext = new AudioContext();
-      // const mixedOutput = audioContext.createMediaStreamDestination();
-
-      // capture audio
-      // Function to create and connect source nodes
-      /*      const getOrCreateSourceNode = (audioElement: HTMLAudioElement, key: string) => {
-              try {
-                const sourceNode = audioContext.createMediaElementSource(audioElement);
-                sourceNode.connect(mixedOutput!);
-                sourceNode.connect(audioContext.destination);
-                return sourceNode;
-              } catch (error) {
-                console.log(`Error creating node ${key}`, error)
-              }
-            };*/
-
-      // Use current audio elements to create and connect source nodes
-      /*      getOrCreateSourceNode(receiverTypingSound.current, 'receiverTyping');
-            getOrCreateSourceNode(senderTypingSound.current, 'senderTyping');
-            getOrCreateSourceNode(messageSentSound.current, 'messageSent');
-            getOrCreateSourceNode(messageReceivedSound.current, 'messageReceived');*/
-
       //start animation
       setRecordedChunks([]);
       simulateAllChat();
@@ -473,37 +447,6 @@ function App() {
     }
   }
 
-  /*const scaleCanvasImage = (canvas: HTMLCanvasElement) => {
-    const scaleBy = 1.5;
-    const w = canvas.width;
-    const h = canvas.height;
-    canvas.width = w * scaleBy;
-    canvas.height = h * scaleBy;
-    return canvas;
-  }*/
-
-  /*const captureFrame = async (canvas: HTMLCanvasElement) => {
-    // @ts-ignore
-    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
-      return;
-    }
-    if (chatRef.current) {
-      try {
-        const capturedCanvas = await html2canvas(chatRef.current, {scale: 2, useCORS: true});
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-
-        // Adjust the timeout to allow for better performance
-        // @ts-ignore
-        canvasStreamRef.current!.getVideoTracks()[0].requestFrame();
-        //TODO refacto tout çaaaa
-        setTimeout(() => captureFrame(canvas), 1000 / 60) // Try a lower frame rate
-      } catch (error) {
-        console.log("Error from capture frame", error)
-      }
-    }
-  };*/
-
   const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
     if (chatRef.current) {
       try {
@@ -532,32 +475,6 @@ function App() {
     return false
   };
 
-  /*  const convertFramesToVideo = async () => {
-      console.log("convertFramesToVideo")
-      // Load the FFmpeg core
-      await ffmpeg.load();
-
-      // Write frames to FFmpeg's virtual file system
-      for (let index = 0; index < videoFrames.length; index++) {
-        const frame = videoFrames[index];
-        const data = await fetchFile(frame!);
-        await ffmpeg.writeFile(`frame${index}.jpg`, data);
-      }
-
-      // Execute the FFmpeg command to convert the images to a video
-      await ffmpeg.exec(['-framerate', '10', '-i', 'frame%01d.jpg', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', 'out.mp4']);
-
-      // Read the generated video file from the virtual file system
-      const data = await ffmpeg.readFile('out.mp4');
-
-      // Create a URL for the video file
-      const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
-      console.log("videoUrl", videoURL)
-
-      // Use this videoURL to display the video or download it
-      downloadRecording(videoURL);
-    };*/
-
   ffmpeg.on("log", ({type, message}) => {
     console.log("ffmpeg type", type)
     console.log("ffmpeg message", message)
@@ -567,17 +484,17 @@ function App() {
     console.log("ffmpeg message", time)
   })
 
-  const getConsecutiveOccurrences = (list: FrameType[]): { value: FrameType, index: number, count: number }[] => {
-    const result: Array<{ value: FrameType, index: number, count: number }> = [];
+  const getConsecutiveOccurrences = (list: FrameType[]): { frameType: FrameType, index: number, nbFrames: number }[] => {
+    const result: Array<{ frameType: FrameType, index: number, nbFrames: number }> = [];
     let current = list[0];
     let count = 1;
     let index = 0;
 
     for (let i = 1; i <= list.length; i++) {
-      if (list[i] === current && i < list.length) {
+      if ((list[i] === FrameType.CHAR_TYPE) && list[i] === current && i < list.length) {
         count++;
       } else {
-        result.push({value: current, index: index, count: count});
+        result.push({frameType: current, index: index, nbFrames: count});
         current = list[i];
         index = i;
         count = 1;
@@ -602,32 +519,33 @@ function App() {
       let audioMix: string[] = [];
       let maps: string[] = ['-map', '[v]'];
       const timeAndDuration = getConsecutiveOccurrences(videoFrames.map(frame => frame.frameType))
-
+      console.log(timeAndDuration)
       timeAndDuration.forEach((timeAndDuration, index) => {
-        if (timeAndDuration.value === FrameType.SILENT) {
-          videoTime += timeAndDuration.count * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
+        if (timeAndDuration.frameType === FrameType.SILENT) {
+          videoTime += timeAndDuration.nbFrames * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
         }
-        if (timeAndDuration.value === FrameType.CHAR_TYPE) {
-          const duration = (timeAndDuration.count * typingSpeed)
+        if (timeAndDuration.frameType === FrameType.CHAR_TYPE) {
+          const duration = (timeAndDuration.nbFrames * typingSpeed)
           // filterComplex += `;[1:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
-          const loopXtimes = Math.ceil(duration / 200)
-          filterComplex += `;[1:a]aloop=loop=${loopXtimes - 1}:size=2e+09,adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
+          // const loopXtimes = Math.ceil(duration / 200) //200ms is the length of the audio
+          // filterComplex += `;[1:a]aloop=loop=${loopXtimes - 1}:size=2e+09,adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
+          filterComplex += `;[1:a]aloop=loop=-1:size=2e+09,atrim=duration=${duration / 1000},adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
           videoTime += duration
         }
-        if (timeAndDuration.value === FrameType.MESSAGE_SENT) {
+        if (timeAndDuration.frameType === FrameType.MESSAGE_SENT) {
           const duration = delayBetweenMessages
           filterComplex += `;[2:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
           videoTime += duration
         }
-        if (timeAndDuration.value === FrameType.RECEIVER_TYPING) {
+        if (timeAndDuration.frameType === FrameType.RECEIVER_TYPING) {
           const duration = delayBetweenMessages
           filterComplex += `;[4:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
           videoTime += duration
         }
-        if (timeAndDuration.value === FrameType.MESSAGE_RECEIVED) {
+        if (timeAndDuration.frameType === FrameType.MESSAGE_RECEIVED) {
           const duration = delayBetweenMessages
           filterComplex += `;[3:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
@@ -644,11 +562,6 @@ function App() {
         // Add each frame and its duration to the concat file content
         // Assuming each image should be displayed for 2 seconds
         concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
-
-        // input 1 senderTyping
-        // input 2 messageSent
-        // input 3 messageReceivedSound
-        // input 4 receiverTypingSound
       }
 
       // Add the last file again without specifying duration to avoid freezing on the last frame
@@ -660,7 +573,7 @@ function App() {
       await ffmpeg.writeFile('input.txt', concatFileContent);
 
       // Write audio files, assuming they are accessible similar to videoFrames
-      const senderTypingSound = await fetchFile(require('./sounds/typing_sound_whatsapp_200ms.mp3'));
+      const senderTypingSound = await fetchFile(require('./sounds/typing_sound_30s.mp3'));
       let messageSentSound = await fetchFile(require('./sounds/sent_sound_whatsapp.mp3'));
       let messageReceivedSound = await fetchFile(require('./sounds/message_received.mp3'));
       let receiverTypingSound = await fetchFile(require('./sounds/is_writing_whatsapp_original_2s.mp3'));
