@@ -59,12 +59,14 @@ function App() {
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
 
-  const input = document.getElementById('messageInput');
+  const inputRef = useRef<HTMLDivElement>(null)
+  const [input, setInput] = useState('')
 
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagesSim, setMessagesSim] = useState<Message[]>([]);
 
+  // Message typed by the user
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
   const setProfilePictureSrcState = useState<string>(require("./img/avatar.png"))
@@ -80,6 +82,14 @@ function App() {
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
   const [inputKey, setInputKey] = useState(Date.now());
+
+
+  //** Typing props to see ** //
+  const [simulateTypingMessage, setSimulateTypingMessage] = useState<boolean>(false)
+  const [charIndex, setCharIndex] = useState<number>(0)
+
+  //** Typing props to see ** //
+
   const chatRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const canvasStreamRef = useRef(null);
@@ -90,7 +100,12 @@ function App() {
   const [network, setNetwork] = useState<string>('5G')
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
-  // const [waitingDownload, setWaitingDownload] = useState<boolean>(false)
+
+  /*  */
+  const [downloadProgress, setDownloadProgress] = useState<number>(0)
+  const [videoDuration, setVideoDuration] = useState<number>(0)
+  /*  */
+
   const [videoFrames, setVideoFrames] = useState<VideoFrame[]>([]);
 
   const [time, setTime] = useState<string>('15:11')
@@ -120,6 +135,7 @@ function App() {
   }
 
   const sendMessage = useCallback((message: Message) => {
+    console.log(message.text)
     let newMessage = {
       received: message.received,
       status: message.status,
@@ -148,14 +164,100 @@ function App() {
       },
       [simulateMessageOn])
 
+  const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
+    if (!downloadingVideo) return;
+    if (chatRef.current) {
+      try {
+        const capturedCanvas = await html2canvas(chatRef.current, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        capturedCanvas.toBlob(blob => {
+          setVideoFrames((videoFrames) => [...videoFrames, {
+            frame: blob,
+            frameType: frameType,
+            duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
+          }]);
+        }, 'image/jpeg', 0.95); // Adjust quality as needed
+        /*        const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+
+                // @ts-ignore
+                canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*/
+      } catch (error) {
+        console.log("Error from capture frame", error)
+      }
+    }
+    return false
+  };
+
   // useEffect to capture a frame with "Typing"
   useEffect(() => {
     if (receiverStatus === 'Typing') {
       captureFrameFbF(FrameType.RECEIVER_TYPING, delayBetweenMessages)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receiverStatus])
 
+  // scroll to bottom in typing area
+  const scrollToBottom = () => {
+    //TODO make it conditional to the length
+    // input!.scrollTop = input!.scrollHeight;
+    inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
+  }
+
   // useEffect to simulate the chat
+  // simulateTypingMessage
+  useEffect(() => {
+    // update input
+    const currentMessage = messagesSim[currentMessageIndex]
+    if (simulateTypingMessage && currentMessage) {
+      // captureFrame
+      // if not first render, captureFrame
+      if (charIndex !== 0) {
+        captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
+      }
+      // type next letter
+      if (charIndex < currentMessage.text!.length) {
+        setTimeout(() => {
+          scrollToBottom()
+          setInput(prev => prev + currentMessage.text![charIndex])
+          setCharIndex(prevState => prevState + 1);
+        }, typingSpeed)
+      } else {
+        // reset charIndex
+        setCharIndex(0)
+        setSimulateTypingMessage(false)
+        senderTypingSound.current.pause()
+
+        // Wait, then move to the next message
+        setTimeout(() => {
+          sendMessage({
+            displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
+            text: input,
+            received: false,
+            imageMessage: currentMessage.imageMessage,
+            status: currentMessage.status,
+            messageTime: currentMessage.messageTime,
+            messageDate: currentMessage.messageDate
+          })
+          setInput('')
+          messageSentSound.current.play().then(() => {
+            setCurrentMessageIndex(currentMessageIndex + 1);
+          });
+          if (currentMessageIndex === messagesSim.length - 1) {
+            setTimeout(() => {
+              setSimulateMessageOn(false)
+              stopRecording();
+            }, 2000)
+          }
+        }, delayBetweenMessages);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simulateTypingMessage, input])
+
   useEffect(() => {
     try {
       // functions
@@ -189,18 +291,25 @@ function App() {
         })
       }
 
+      // should be in separate useEffect
       const simulateTypingMessage = (message: Message) => {
         senderTypingSound.current.play().then(() => {
-          let index = 0;
 
-          const scrollToBottom = () => {
-            //TODO make it conditional to the length
-            input!.scrollTop = input!.scrollHeight;
-          }
+          /*          let index = 0;
+                    const scrollToBottom = () => {
+                      //TODO make it conditional to the length
+                      // input!.scrollTop = input!.scrollHeight;
+                      inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
+                    }*/
+          setSimulateTypingMessage(true)
 
-          const typeChar = () => {
+          /*const typeChar = () => {
             if (index < message.text!.length) {
-              input!.textContent = input!.textContent + message.text!.charAt(index);
+              // input!.textContent = input!.textContent + message.text!.charAt(index);
+              setInput(prev => {
+                return prev + message.text!.charAt(index)
+              })
+
               scrollToBottom();
               index++;
               setTimeout(() => {
@@ -215,14 +324,15 @@ function App() {
               setTimeout(() => {
                 sendMessage({
                   displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
-                  text: input!.textContent!,
+                  text: input,
                   received: false,
                   imageMessage: message.imageMessage,
                   status: message.status,
                   messageTime: message.messageTime,
                   messageDate: message.messageDate
                 })
-                input!.textContent = '';
+                // input!.textContent = '';
+                setInput('')
                 messageSentSound.current.play().then(() => {
                   setCurrentMessageIndex(currentMessageIndex + 1);
                 });
@@ -234,8 +344,8 @@ function App() {
                 }
               }, delayBetweenMessages);
             }
-          };
-          typeChar();
+          };*/
+          // typeChar();
         });
 
       }
@@ -266,7 +376,7 @@ function App() {
         }
       }
 
-      // Add frame of delay between messages
+      // **** Add frame of delay between messages *****
       if (currentMessageIndex === 0) {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
@@ -286,8 +396,8 @@ function App() {
             captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
           }
         }
-
       }
+      // **** End *****
       if (isTyping && currentMessageIndex < messagesSim.length) {
         setTimeout(() => {
           const message = messagesSim[currentMessageIndex];
@@ -347,7 +457,8 @@ function App() {
     if (!isTyping) {
       setIsTyping(true);
       setCurrentMessageIndex(0);
-      input!.textContent = '';
+      // input!.textContent = '';
+      setInput('')
     }
   };
 
@@ -447,41 +558,38 @@ function App() {
     }
   }
 
-  const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
-    if (chatRef.current) {
-      try {
-        console.log("capture frame fbf")
-        const capturedCanvas = await html2canvas(chatRef.current, {
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        capturedCanvas.toBlob(blob => {
-          setVideoFrames((videoFrames) => [...videoFrames, {
-            frame: blob,
-            frameType: frameType,
-            duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
-          }]);
-        }, 'image/jpeg', 0.95); // Adjust quality as needed
-        /*        const ctx = canvas.getContext('2d')!;
-                ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
 
-                // @ts-ignore
-                canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*/
-      } catch (error) {
-        console.log("Error from capture frame", error)
-      }
+  function extractTime(stderrLine: string): number | null {
+    const match = stderrLine.match(/time=([0-9:.]+)/);
+    const time = match ? match[1] : null;
+    if (time) {
+      return timeToMilliseconds(time)
     }
-    return false
-  };
+    return null
+  }
+
+  function timeToMilliseconds(time: string): number {
+    const parts = time.split(':');
+    const hours = parseInt(parts[0], 10);
+    const minutes = parseInt(parts[1], 10);
+    const seconds = parseFloat(parts[2]); // Utiliser parseFloat pour gérer les secondes et millisecondes
+
+    // Convertir heures, minutes et secondes en millisecondes
+    return (hours * 3600 + minutes * 60 + seconds) * 1000;
+  }
 
   ffmpeg.on("log", ({type, message}) => {
-    console.log("ffmpeg type", type)
-    console.log("ffmpeg message", message)
+    console.log("log message", message)
+    const parsedMessage = extractTime(message)
+    if (parsedMessage && videoDuration) {
+      // convert to ms
+      setDownloadProgress(Math.round((parsedMessage / videoDuration) * 100))
+    }
   })
+
   ffmpeg.on("progress", ({progress, time}) => {
-    console.log("ffmpeg progress", progress)
-    console.log("ffmpeg message", time)
+    // console.log("progress progress", progress)
+    console.log("progress time", time)
   })
 
   const getConsecutiveOccurrences = (list: FrameType[]): { frameType: FrameType, index: number, nbFrames: number }[] => {
@@ -517,18 +625,14 @@ function App() {
       let videoTime = 0;
       let filterComplex = '';
       let audioMix: string[] = [];
-      let maps: string[] = ['-map', '[v]'];
       const timeAndDuration = getConsecutiveOccurrences(videoFrames.map(frame => frame.frameType))
-      console.log(timeAndDuration)
+
       timeAndDuration.forEach((timeAndDuration, index) => {
         if (timeAndDuration.frameType === FrameType.SILENT) {
           videoTime += timeAndDuration.nbFrames * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
         }
         if (timeAndDuration.frameType === FrameType.CHAR_TYPE) {
           const duration = (timeAndDuration.nbFrames * typingSpeed)
-          // filterComplex += `;[1:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
-          // const loopXtimes = Math.ceil(duration / 200) //200ms is the length of the audio
-          // filterComplex += `;[1:a]aloop=loop=${loopXtimes - 1}:size=2e+09,adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
           filterComplex += `;[1:a]aloop=loop=-1:size=2e+09,atrim=duration=${duration / 1000},adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
           videoTime += duration
@@ -553,6 +657,10 @@ function App() {
         }
 
       })
+
+      // set video duration in ms
+      setVideoDuration(videoTime)
+
       // Write frames to FFmpeg's virtual file system and build the concat file content
       for (let index = 0; index < videoFrames.length; index++) {
         const videoFrame = videoFrames[index];
@@ -582,10 +690,7 @@ function App() {
       await ffmpeg.writeFile('message_received.mp3', messageReceivedSound);
       await ffmpeg.writeFile('receiver_typing_sound.mp3', receiverTypingSound);
 
-      // filterComplex = '[0:v]setpts=PTS-STARTPTS[v];[1:a]adelay=1000|1000,aloop=loop=-1:size=2e+09,atrim=duration=3.5,asetpts=N/SR/TB[aud1]';
       filterComplex = '[0:v]setpts=PTS-STARTPTS[v]' + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
-      console.log('filterCompleeeex', filterComplex)
-      console.log('maps', maps)
       // Execute the FFmpeg command using the concat demuxer to convert the images to a video
       await ffmpeg.exec([
         '-f', 'concat',
@@ -596,8 +701,6 @@ function App() {
         '-i', 'message_received.mp3', // Audio input
         '-i', 'receiver_typing_sound.mp3', // Audio input
         '-filter_complex', filterComplex, // Corrected filter_complex
-        /*        '-map', '[v]', // Corrected to map the video stream
-                '-map', '[aud1]', // Corrected to map the audio stream*/
         '-map', '[v]',
         '-map', '[audio_mix]',
         '-shortest',
@@ -997,7 +1100,7 @@ function App() {
                     {downloadingVideo &&
                         <span className="spinner-grow spinner-grow-sm mx-2" role="status"
                               aria-hidden="true"/>}
-                    Download
+                    Download {downloadProgress}%
                   </button>
                 </div>
               </div>
@@ -1054,13 +1157,14 @@ function App() {
                       <div className={"emoji-container"}>
                         <span className={"icon-emoji center-icon"}/>
                       </div>
-                      <div id="messageInput"
-                           className={"editable-div"}
-                           contentEditable="false"
-                           role="textbox"
-                           aria-multiline="false"
-                           data-placeholder="Type a message"
-                      />
+                      <span id="messageInput"
+                            ref={inputRef}
+                            className={"editable-div"}
+                            role="textbox"
+                            aria-multiline="false"
+                            data-placeholder="Type a message"
+                      >{input}
+                      </span>
                       <div className={"right-input"}>
                         <div className={"emoji-container"}>
                           <span className={"icon-clip center-icon"}/>
