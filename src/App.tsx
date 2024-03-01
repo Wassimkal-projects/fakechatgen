@@ -43,7 +43,7 @@ enum FrameType {
 interface VideoFrame {
   frame: Blob | null;
   duration: number;
-  frameType: FrameType
+  frameType: FrameType;
 }
 
 function App() {
@@ -106,7 +106,7 @@ function App() {
   const [videoDuration, setVideoDuration] = useState<number>(0)
   /*  */
 
-  const [videoFrames, setVideoFrames] = useState<VideoFrame[]>([]);
+  const videoFrames = useRef<VideoFrame[]>([]);
 
   const [time, setTime] = useState<string>('15:11')
   const [messageTime, setMessageTime] = useState<string>('15:11')
@@ -131,7 +131,7 @@ function App() {
   const clearConversation = () => {
     setMessages([])
     setRecordedChunks([])
-    setVideoFrames([])
+    videoFrames.current = []
   }
 
   const sendMessage = useCallback((message: Message) => {
@@ -174,11 +174,11 @@ function App() {
           logging: false
         });
         capturedCanvas.toBlob(blob => {
-          setVideoFrames((videoFrames) => [...videoFrames, {
+          videoFrames.current.push({
             frame: blob,
             frameType: frameType,
             duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
-          }]);
+          })
         }, 'image/jpeg', 0.95); // Adjust quality as needed
         /*        const ctx = canvas.getContext('2d')!;
                 ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
@@ -504,7 +504,8 @@ function App() {
   }
 
   let startRecording = () => {
-    setVideoFrames([])
+    videoFrames.current = []
+    // setVideoFrames([])
     setDownloadingVideo(true)
     // setWaitingDownload(true)
     resetAudioElements()
@@ -614,7 +615,6 @@ function App() {
 
   const convertFramesToVideo = async () => {
     try {
-      console.log("convertFramesToVideo");
       // Load the FFmpeg core
       await ffmpeg.load();
 
@@ -625,7 +625,7 @@ function App() {
       let videoTime = 0;
       let filterComplex = '';
       let audioMix: string[] = [];
-      const timeAndDuration = getConsecutiveOccurrences(videoFrames.map(frame => frame.frameType))
+      const timeAndDuration = getConsecutiveOccurrences(videoFrames.current.map(frame => frame.frameType))
 
       timeAndDuration.forEach((timeAndDuration, index) => {
         if (timeAndDuration.frameType === FrameType.SILENT) {
@@ -661,9 +661,10 @@ function App() {
       // set video duration in ms
       setVideoDuration(videoTime)
 
+      console.log(videoFrames)
       // Write frames to FFmpeg's virtual file system and build the concat file content
-      for (let index = 0; index < videoFrames.length; index++) {
-        const videoFrame = videoFrames[index];
+      for (let index = 0; index < videoFrames.current.length; index++) {
+        const videoFrame = videoFrames.current[index];
         const data = await fetchFile(videoFrame.frame!);
         await ffmpeg.writeFile(`frame${index}.jpg`, data);
 
@@ -673,8 +674,8 @@ function App() {
       }
 
       // Add the last file again without specifying duration to avoid freezing on the last frame
-      if (videoFrames.length > 0) {
-        concatFileContent += `file 'frame${videoFrames.length - 1}.jpg'\n`;
+      if (videoFrames.current.length > 0) {
+        concatFileContent += `file 'frame${videoFrames.current.length - 1}.jpg'\n`;
       }
 
       // Write the concat file content to FFmpeg's virtual file system
