@@ -164,7 +164,39 @@ function App() {
       },
       [simulateMessageOn])
 
+
+  /*
+    const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
+      if (!downloadingVideo) return;
+      if (chatRef.current) {
+        try {
+          const capturedCanvas = await html2canvas(chatRef.current, {
+            scale: 2,
+            useCORS: true,
+            logging: false
+          });
+          capturedCanvas.toBlob(blob => {
+            videoFrames.current.push({
+              frame: blob,
+              frameType: frameType,
+              duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
+            })
+          }, 'image/jpeg', 0.95); // Adjust quality as needed
+          /!*        const ctx = canvas.getContext('2d')!;
+                  ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
+
+                  // @ts-ignore
+                  canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*!/
+        } catch (error) {
+          console.log("Error from capture frame", error)
+        }
+      }
+      return false
+    };
+  */
+
   const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
+    console.log("new pdpf")
     if (!downloadingVideo) return;
     if (chatRef.current) {
       try {
@@ -173,23 +205,29 @@ function App() {
           useCORS: true,
           logging: false
         });
-        capturedCanvas.toBlob(blob => {
-          videoFrames.current.push({
-            frame: blob,
-            frameType: frameType,
-            duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
-          })
-        }, 'image/jpeg', 0.95); // Adjust quality as needed
-        /*        const ctx = canvas.getContext('2d')!;
-                ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
 
-                // @ts-ignore
-                canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*/
+        const blobPromise = new Promise<Blob | null>((resolve, reject) => {
+          capturedCanvas.toBlob(blob => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Blob creation failed"));
+            }
+          }, 'image/jpeg', 0.95); // Adjust quality as needed
+        });
+
+        const blob = await blobPromise;
+        videoFrames.current.push({
+          frame: blob,
+          frameType: frameType,
+          duration: frameDuration ? (frameDuration / 1000) : 0.2 // Using a default duration if not provided
+        });
+
       } catch (error) {
-        console.log("Error from capture frame", error)
+        console.log("Error from capture frame", error);
       }
     }
-    return false
+    return false;
   };
 
   // useEffect to capture a frame with "Typing"
