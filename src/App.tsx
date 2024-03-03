@@ -57,7 +57,7 @@ function App() {
   let receiverTypingSound = useRef(new Audio(require('./sounds/is_writing_whatsapp.mp3')));
   receiverTypingSound.current.loop = true;
 
-  const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(0);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState<number>(-1);
 
   const inputRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
@@ -71,7 +71,7 @@ function App() {
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
   const setProfilePictureSrcState = useState<string>(require("./img/avatar.png"))
 
-  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const isTyping = useRef<boolean>(false);
 
   const typingSpeed = 90; // Speed in milliseconds
   const delayBetweenMessages = 1000;
@@ -250,9 +250,8 @@ function App() {
               messageDate: currentMessage.messageDate
             })
             setInput('')
-            messageSentSound.current.play().then(() => {
-              setCurrentMessageIndex(currentMessageIndex + 1);
-            });
+            messageSentSound.current.play()
+            setCurrentMessageIndex(prev => prev + 1)
             if (currentMessageIndex === messagesSim.current.length - 1) {
               setTimeout(() => {
                 setSimulateMessageOn(false)
@@ -268,40 +267,40 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulateTypingMessage, input])
 
-  // useEffect to simulate the chat
-  useEffect(() => {
-    console.log('useEffect')
+  const doItPlease = () => {
+
+    console.log('doItPlease')
+    console.log('currentMessageIndex', currentMessageIndex)
+    console.log('messagesSim.current', messagesSim.current)
 
     try {
       // functions
       const simulateReceivingMessage = (message: Message) => {
-        receiverTypingSound.current.play().then(() => {
-          setReceiverStatus('Typing')
-          setTimeout(() => {
-            receiverTypingSound.current.pause()
-            receiverTypingSound.current.currentTime = 0;
-            sendMessage({
-              text: message.text,
-              received: true,
-              imageMessage: message.imageMessage,
-              status: message.status,
-              displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
-              messageTime: message.messageTime,
-              messageDate: message.messageDate
-            })
-            messageReceivedSound.current.play().then(() => {
-              setReceiverStatus('Online')
-              setCurrentMessageIndex(currentMessageIndex + 1);
-            });
-
-            if (currentMessageIndex === messagesSim.current.length - 1) {
-              setTimeout(() => {
-                setSimulateMessageOn(false)
-                stopRecording();
-              }, 2000)
-            }
-          }, responseTime)
-        })
+        receiverTypingSound.current.play()
+        setReceiverStatus('Typing')
+        setTimeout(() => {
+          receiverTypingSound.current.pause()
+          receiverTypingSound.current.currentTime = 0;
+          sendMessage({
+            text: message.text,
+            received: true,
+            imageMessage: message.imageMessage,
+            status: message.status,
+            displayTail: currentMessageIndex === 0 ? true : !messages[currentMessageIndex - 1].received,
+            messageTime: message.messageTime,
+            messageDate: message.messageDate
+          })
+          messageReceivedSound.current.play()
+          setReceiverStatus('Online')
+          setCurrentMessageIndex(prev => prev + 1)
+            
+          if (currentMessageIndex === messagesSim.current.length - 1) {
+            setTimeout(() => {
+              setSimulateMessageOn(false)
+              stopRecording();
+            }, 2000)
+          }
+        }, responseTime)
       }
 
       // launches useEffect
@@ -316,7 +315,7 @@ function App() {
         senderTypingSound.current.pause();
         sendMessage(message)
         messageSentSound.current.play();
-        setCurrentMessageIndex(currentMessageIndex + 1);
+        setCurrentMessageIndex(prev => prev + 1)
         if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
@@ -329,7 +328,7 @@ function App() {
         senderTypingSound.current.pause();
         sendMessage(message)
         messageSentSound.current.play();
-        setCurrentMessageIndex(currentMessageIndex + 1);
+        setCurrentMessageIndex(prev => prev + 1)
         if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
@@ -345,7 +344,11 @@ function App() {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
 
-      if (currentMessageIndex > 0 && isTyping && messagesSim.current.length > 0) {
+      console.log('currentMessageIndex', currentMessageIndex)
+      console.log('isTyping2', isTyping.current)
+      console.log('messagesSim.current.length', messagesSim.current.length)
+
+      if (currentMessageIndex > 0 && isTyping.current && messagesSim.current.length > 0) {
         if (messagesSim.current[currentMessageIndex - 1].imageMessage) {
           setTimeout(() => {
             if (messagesSim.current[currentMessageIndex - 1].received) {
@@ -363,11 +366,14 @@ function App() {
         }
       }
       // **** End *****
-      console.log('currentMessageIndex', currentMessageIndex)
-      console.log('isTyping2', isTyping)
-      console.log('messagesSim.current.length', messagesSim.current.length)
 
-      if (isTyping && currentMessageIndex < messagesSim.current.length) {
+      if (currentMessageIndex >= messagesSim.current.length) {
+        console.log('current recoit false')
+        isTyping.current = false
+        return;
+      }
+
+      if (isTyping.current && currentMessageIndex < messagesSim.current.length) {
         setTimeout(() => {
           const message = messagesSim.current[currentMessageIndex];
           if (!message.received) {
@@ -388,21 +394,27 @@ function App() {
     } catch (error) {
       console.log("Error from useEffect", error)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTyping, currentMessageIndex, messagesSim]);
+  }
 
+  // useEffect to simulate the chat
   useEffect(() => {
-    console.log('useEffect isTyping')
-    if (currentMessageIndex >= messagesSim.current.length) {
-      console.log('useEffect isTyping inside')
-      setIsTyping(false); // Stop typing when all messages are done
-    }
-  }, [currentMessageIndex, messagesSim]);
+    doItPlease()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMessageIndex]);
+
+  /*  useEffect(() => {
+      console.log('useEffect isTyping')
+      if (currentMessageIndex.current >= messagesSim.current.length) {
+        console.log('useEffect isTyping inside')
+        setIsTyping(false); // Stop typing when all messages are done
+      }
+    }, [currentMessageIndex, messagesSim]);*/
 
 
   const simulateAllChat = () => {
     if (messages.length < 1) return;
     console.log('simulateAll')
+    console.log('isTyping', isTyping.current)
     // TODO hide all options
     setSimulateMessageOn(true)
 
@@ -411,11 +423,11 @@ function App() {
         )*/
     messagesSim.current = messages
     setMessages([])
-    if (!isTyping) {
-      console.log('isTyping')
-      setIsTyping(true);
-      setCurrentMessageIndex(0);
-      // input!.textContent = '';
+    if (!isTyping.current) {
+      isTyping.current = true
+      console.log('isTyping', isTyping.current)
+      console.log('currentMessageIndex', currentMessageIndex)
+      setCurrentMessageIndex(0)
       setInput('')
     }
   };
@@ -593,6 +605,7 @@ function App() {
         '-filter_complex', filterComplex, // Corrected filter_complex
         '-map', '[v]',
         '-map', '[audio_mix]',
+        '-shortest',
         '-c:v', 'libx264', // Video codec
         '-pix_fmt', 'yuv420p', // Pixel format specified once
         '-c:a', 'aac', // Audio codec
