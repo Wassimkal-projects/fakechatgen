@@ -34,12 +34,8 @@ export const MessageComponent: React.FC<{
         simulateMessageOn
       }) => {
 
-  const [currentMessage, setCurrentMessage] = useState<Message>(message)
-  const {text, received, imageMessage, status, displayTail, messageDate} = currentMessage
+  let currentMessage = message
 
-  const [isReceived, setIsReceived] = useState<boolean>(received)
-  const [isDisplayTail] = useState<boolean>(displayTail)
-  const [textMessage, setTextMessage] = useState(text)
   const [updateMessageArea, setUpdateMessageArea] = useState(false)
   const [messageDisplayed, setMessageDisplayed] = messageDisplayedState
   const updateMessageModalState = useState(false)
@@ -53,6 +49,7 @@ export const MessageComponent: React.FC<{
         }
       },
       [index, setMessageDisplayed, simulateMessageOn])
+
   const toogleOptionsDisplayed = () => {
     setMessageDisplayed({
       display: (!(index === messageDisplayed.index && messageDisplayed.display)),
@@ -61,22 +58,9 @@ export const MessageComponent: React.FC<{
     setUpdateMessageArea(false)
   }
 
-  useEffect(() => {
-    setIsReceived(received)
-  }, [received])
-
-  useEffect(() => {
-    setTextMessage(text);
-  }, [text])
-
-  useEffect(() => {
-    setCurrentMessage(message)
-  }, [message])
-
   const toggleReceived = () => {
-    setIsReceived(!isReceived);
     updateMessage(MessageActions.LEFT)
-  }
+  };
 
   return (
       <>
@@ -85,44 +69,47 @@ export const MessageComponent: React.FC<{
             message={currentMessage}
             updateMessage={
               (message) => {
-                setCurrentMessage(message)
+                currentMessage = message
                 updateMessage(MessageActions.UPDATE, message)
               }
             }
         />
         <div
             className={(messageDisplayed.display && messageDisplayed.index === index) ? "options-border" : ""}>
-          {messageDate && messageDate !== 'None' &&
+          {currentMessage.messageDate && currentMessage.messageDate !== 'None' &&
               <div className={"row justify-content-center my-2"}>
                 <div className={"col-auto message-date"}>
-                  {messageDate}
+                  {currentMessage.messageDate}
                 </div>
               </div>
           }
           <div className={"flex-message"}>
-            {isReceived && isDisplayTail && (<svg color={"white"} viewBox="0 0 8 13" height="13"
-                                                  width="8"
-                                                  preserveAspectRatio="xMidYMid meet"
-                                                  className="receiver-tail" version="1.1" x="0px"
-                                                  y="0px"
-                                                  enableBackground="new 0 0 8 13">
-              <title>tail-in</title>
-              <path
-                  opacity="0.13" fill="#0000000"
-                  d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"/>
-              <path
-                  fill="currentColor"
-                  d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
-            </svg>)
+            {currentMessage.received && currentMessage.displayTail && (
+                <svg color={"white"} viewBox="0 0 8 13" height="13"
+                     width="8"
+                     preserveAspectRatio="xMidYMid meet"
+                     className="receiver-tail" version="1.1" x="0px"
+                     y="0px"
+                     enableBackground="new 0 0 8 13">
+                  <title>tail-in</title>
+                  <path
+                      opacity="0.13" fill="#0000000"
+                      d="M1.533,3.568L8,12.193V1H2.812 C1.042,1,0.474,2.156,1.533,3.568z"/>
+                  <path
+                      fill="currentColor"
+                      d="M1.533,2.568L8,11.193V0L2.812,0C1.042,0,0.474,1.156,1.533,2.568z"/>
+                </svg>)
             }
-            <MessageDiv $isreceived={isReceived} $isdisplaytail={isDisplayTail}
+            <MessageDiv $isreceived={currentMessage.received}
+                        $isdisplaytail={currentMessage.displayTail}
                         className={`message-text hover-options`}
                         onClick={() => toogleOptionsDisplayed()}>
-              <p className="text-msg">{textMessage}</p>
-              {imageMessage && (
+              <p className="text-msg">{currentMessage.text}</p>
+              {currentMessage.imageMessage && (
                   <>
-                    {textMessage && <br/>}
-                    <img className={"image-message"} src={imageMessage} alt="New message"
+                    {currentMessage.text && <br/>}
+                    <img className={"image-message"} src={currentMessage.imageMessage}
+                         alt="New message"
                          crossOrigin="anonymous"/>
                   </>
               )}
@@ -130,15 +117,15 @@ export const MessageComponent: React.FC<{
               <div className="msg-activity">
               <span className="msg-time"
                     data-time="08:42">{message.messageTime}</span>
-                {!isReceived && <div className="message-status msg-status">
-                  {status === MessageStatus.DELIVERED && <DeliveredIcon/>}
-                  {status === MessageStatus.SEEN && <SeenIcon/>}
-                  {status === MessageStatus.SENT && <SentIcon/>}
-                  {status === MessageStatus.SENDING && <SendingIcon/>}
+                {!currentMessage.received && <div className="message-status msg-status">
+                  {currentMessage.status === MessageStatus.DELIVERED && <DeliveredIcon/>}
+                  {currentMessage.status === MessageStatus.SEEN && <SeenIcon/>}
+                  {currentMessage.status === MessageStatus.SENT && <SentIcon/>}
+                  {currentMessage.status === MessageStatus.SENDING && <SendingIcon/>}
                 </div>}
               </div>
             </MessageDiv>
-            {!isReceived && isDisplayTail && (
+            {!currentMessage.received && currentMessage.displayTail && (
                 <svg className={"sender-tail"}
                      viewBox="0 0 7 12.19" height="12" width="7">
                   <path opacity="0.12999999523162842; " fill="#0000000"
@@ -171,10 +158,6 @@ export const MessageComponent: React.FC<{
                   </div>
 
                 </div>
-                {/*                {updateMessageArea && (<div>
-                <textarea className={"update-text"} value={textMessage}
-                          onChange={event => setUpdatedMessage(event.target.value)}/>
-                </div>)}*/}
                 <div className={"row"}>
                   <div className={"col"}>
                     <button className="btn btn-sm btn-secondary"
@@ -189,13 +172,13 @@ export const MessageComponent: React.FC<{
                     </button>
                   </div>
                   <div className={"col"}>
-                    <button disabled={isReceived} className="btn btn-sm btn-secondary"
+                    <button disabled={currentMessage.received} className="btn btn-sm btn-secondary"
                             onClick={() => toggleReceived()}>
 
                       <span><FontAwesomeIcon icon={faArrowLeft}/></span></button>
                   </div>
                   <div className={"col"}>
-                    <button disabled={!isReceived} className="btn btn-sm btn-secondary"
+                    <button disabled={!currentMessage.received} className="btn btn-sm btn-secondary"
                             onClick={() => toggleReceived()}>
                       <span><FontAwesomeIcon icon={faArrowRight} color={"white"}/></span>
                     </button>

@@ -76,6 +76,7 @@ function App() {
   const typingSpeed = 90; // Speed in milliseconds
   const delayBetweenMessages = 1000;
   const responseTime = 2000;
+
   const endOfMessagesRef = useRef(null);
   const [receiverName, setReceiverName] = useState('John Doe');
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
@@ -86,7 +87,7 @@ function App() {
 
   //** Typing props to see ** //
   const [simulateTypingMessage, setSimulateTypingMessage] = useState<boolean>(false)
-  const [charIndex, setCharIndex] = useState<number>(0)
+  const charIndex = useRef<number>(-1)
 
   //** Typing props to see ** //
 
@@ -135,7 +136,6 @@ function App() {
   }
 
   const sendMessage = useCallback((message: Message) => {
-    console.log(message.text)
     let newMessage = {
       received: message.received,
       status: message.status,
@@ -147,15 +147,16 @@ function App() {
     if (message.text) {
       newMessage.text = message.text;
     }
+
     if (message.imageMessage) {
       newMessage.imageMessage = message.imageMessage;
     }
     if (message.text || message.imageMessage) {
-      setMessages([...messages, newMessage])
+      setMessages(current => [...current, newMessage])
       // @ts-ignore
       setInputMessage('')
     }
-  }, [messages])
+  }, [])
 
   useEffect(() => {
         if (!simulateMessageOn) {
@@ -164,39 +165,7 @@ function App() {
       },
       [simulateMessageOn])
 
-
-  /*
-    const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
-      if (!downloadingVideo) return;
-      if (chatRef.current) {
-        try {
-          const capturedCanvas = await html2canvas(chatRef.current, {
-            scale: 2,
-            useCORS: true,
-            logging: false
-          });
-          capturedCanvas.toBlob(blob => {
-            videoFrames.current.push({
-              frame: blob,
-              frameType: frameType,
-              duration: frameDuration ? (frameDuration / 1000) : 0.2 //TODO default ?
-            })
-          }, 'image/jpeg', 0.95); // Adjust quality as needed
-          /!*        const ctx = canvas.getContext('2d')!;
-                  ctx.drawImage(capturedCanvas, 0, 0, canvas.width, canvas.height);
-
-                  // @ts-ignore
-                  canvasStreamRef.current!.getVideoTracks()[0].requestFrame();*!/
-        } catch (error) {
-          console.log("Error from capture frame", error)
-        }
-      }
-      return false
-    };
-  */
-
   const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
-    console.log("new pdpf")
     if (!downloadingVideo) return;
     if (chatRef.current) {
       try {
@@ -205,7 +174,6 @@ function App() {
           useCORS: true,
           logging: false
         });
-
         const blobPromise = new Promise<Blob | null>((resolve, reject) => {
           capturedCanvas.toBlob(blob => {
             if (blob) {
@@ -222,7 +190,6 @@ function App() {
           frameType: frameType,
           duration: frameDuration ? (frameDuration / 1000) : 0.2 // Using a default duration if not provided
         });
-
       } catch (error) {
         console.log("Error from capture frame", error);
       }
@@ -240,62 +207,66 @@ function App() {
 
   // scroll to bottom in typing area
   const scrollToBottom = () => {
-    //TODO make it conditional to the length
-    // input!.scrollTop = input!.scrollHeight;
     inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
   }
 
-  // useEffect to simulate the chat
   // simulateTypingMessage
   useEffect(() => {
-    // update input
-    const currentMessage = messagesSim[currentMessageIndex]
-    if (simulateTypingMessage && currentMessage) {
-      // captureFrame
-      // if not first render, captureFrame
-      if (charIndex !== 0) {
-        captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
-      }
-      // type next letter
-      if (charIndex < currentMessage.text!.length) {
-        setTimeout(() => {
-          scrollToBottom()
-          setInput(prev => prev + currentMessage.text![charIndex])
-          setCharIndex(prevState => prevState + 1);
-        }, typingSpeed)
-      } else {
-        // reset charIndex
-        setCharIndex(0)
-        setSimulateTypingMessage(false)
-        senderTypingSound.current.pause()
+    const captureAndProceed = async () => {
+      // update input
+      const currentMessage = messagesSim[currentMessageIndex]
+      if (simulateTypingMessage && currentMessage) {
+        // captureFrame
+        // if not first render, captureFrame
+        charIndex.current++
+        if (charIndex.current !== 0) {
+          await captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
+        }
+        // type next letter
+        if (charIndex.current < currentMessage.text!.length) {
+          setTimeout(() => {
+            scrollToBottom()
+            setInput(prev => {
+              return prev + currentMessage.text![charIndex.current]
+            })
+          }, typingSpeed)
+        } else {
+          // reset charIndex
+          charIndex.current = -1
+          setSimulateTypingMessage(false)
+          senderTypingSound.current.pause()
 
-        // Wait, then move to the next message
-        setTimeout(() => {
-          sendMessage({
-            displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
-            text: input,
-            received: false,
-            imageMessage: currentMessage.imageMessage,
-            status: currentMessage.status,
-            messageTime: currentMessage.messageTime,
-            messageDate: currentMessage.messageDate
-          })
-          setInput('')
-          messageSentSound.current.play().then(() => {
-            setCurrentMessageIndex(currentMessageIndex + 1);
-          });
-          if (currentMessageIndex === messagesSim.length - 1) {
-            setTimeout(() => {
-              setSimulateMessageOn(false)
-              stopRecording();
-            }, 2000)
-          }
-        }, delayBetweenMessages);
+          // Wait, then move to the next message
+          setTimeout(() => {
+            sendMessage({
+              displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
+              text: input,
+              received: false,
+              imageMessage: currentMessage.imageMessage,
+              status: currentMessage.status,
+              messageTime: currentMessage.messageTime,
+              messageDate: currentMessage.messageDate
+            })
+            setInput('')
+            messageSentSound.current.play().then(() => {
+              setCurrentMessageIndex(currentMessageIndex + 1);
+            });
+            if (currentMessageIndex === messagesSim.length - 1) {
+              setTimeout(() => {
+                setSimulateMessageOn(false)
+                stopRecording();
+              }, 2000)
+            }
+          }, delayBetweenMessages);
+        }
       }
     }
+
+    captureAndProceed()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulateTypingMessage, input])
 
+  // useEffect to simulate the chat
   useEffect(() => {
     try {
       // functions
@@ -329,63 +300,11 @@ function App() {
         })
       }
 
-      // should be in separate useEffect
-      const simulateTypingMessage = (message: Message) => {
+      // launches useEffect
+      const simulateTypingMessage = () => {
         senderTypingSound.current.play().then(() => {
-
-          /*          let index = 0;
-                    const scrollToBottom = () => {
-                      //TODO make it conditional to the length
-                      // input!.scrollTop = input!.scrollHeight;
-                      inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
-                    }*/
           setSimulateTypingMessage(true)
-
-          /*const typeChar = () => {
-            if (index < message.text!.length) {
-              // input!.textContent = input!.textContent + message.text!.charAt(index);
-              setInput(prev => {
-                return prev + message.text!.charAt(index)
-              })
-
-              scrollToBottom();
-              index++;
-              setTimeout(() => {
-                captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
-                typeChar()
-              }, typingSpeed);
-            } else {
-              // End sound after a message is complete
-              senderTypingSound.current.pause()
-
-              // Wait, then move to the next message
-              setTimeout(() => {
-                sendMessage({
-                  displayTail: currentMessageIndex === 0 ? true : messages[currentMessageIndex - 1].received,
-                  text: input,
-                  received: false,
-                  imageMessage: message.imageMessage,
-                  status: message.status,
-                  messageTime: message.messageTime,
-                  messageDate: message.messageDate
-                })
-                // input!.textContent = '';
-                setInput('')
-                messageSentSound.current.play().then(() => {
-                  setCurrentMessageIndex(currentMessageIndex + 1);
-                });
-                if (currentMessageIndex === messagesSim.length - 1) {
-                  setTimeout(() => {
-                    setSimulateMessageOn(false)
-                    stopRecording();
-                  }, 2000)
-                }
-              }, delayBetweenMessages);
-            }
-          };*/
-          // typeChar();
         });
-
       }
 
       const simulateSendingImage = (message: Message) => {
@@ -418,6 +337,7 @@ function App() {
       if (currentMessageIndex === 0) {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
+
       if (currentMessageIndex > 0 && isTyping && messagesSim.length > 0) {
         if (messagesSim[currentMessageIndex - 1].imageMessage) {
           setTimeout(() => {
@@ -441,7 +361,7 @@ function App() {
           const message = messagesSim[currentMessageIndex];
           if (!message.received) {
             if (message.text) {
-              simulateTypingMessage(message)
+              simulateTypingMessage()
             } else if (message.imageMessage) {
               simulateSendingImage(message)
             }
@@ -460,26 +380,28 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTyping, currentMessageIndex, messagesSim]);
 
-  useEffect(() => {
-    if (simulateMessageOn) {
-      if (messages[messages.length - 1]?.imageMessage) {
-        setTimeout(() => {
+  /*  // Use effect to scroll down after each message displayed
+    useEffect(() => {
+      if (simulateMessageOn) {
+        if (messages[messages.length - 1]?.imageMessage) {
+          setTimeout(() => {
+            // @ts-ignore
+            endOfMessagesRef.current?.scrollIntoView();
+          }, 200)
+        } else {
           // @ts-ignore
           endOfMessagesRef.current?.scrollIntoView();
-        }, 200)
-      } else {
-        // @ts-ignore
-        endOfMessagesRef.current?.scrollIntoView();
+        }
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages.length]);*/
 
   useEffect(() => {
     if (currentMessageIndex >= messagesSim.length) {
       setIsTyping(false); // Stop typing when all messages are done
     }
   }, [currentMessageIndex, messagesSim]);
+
 
   const simulateAllChat = () => {
     if (messages.length < 1) return;
@@ -512,41 +434,9 @@ function App() {
     window.URL.revokeObjectURL(url);
   }, [recordedChunks])
 
-  const resetAudioElements = () => {
-    senderTypingSound.current.pause();
-    senderTypingSound.current.currentTime = 0
-
-    receiverTypingSound.current.pause();
-    receiverTypingSound.current.currentTime = 0
-
-    messageReceivedSound.current.pause();
-    messageReceivedSound.current.currentTime = 0
-
-    messageSentSound.current.pause();
-    messageSentSound.current.currentTime = 0
-
-    senderTypingSound.current.remove();
-    receiverTypingSound.current.remove();
-    messageReceivedSound.current.remove();
-    messageSentSound.current.remove();
-
-    senderTypingSound.current = new Audio(require('./sounds/typing_sound_whatsapp.mp3'));
-    senderTypingSound.current.loop = true;
-
-    messageSentSound.current = new Audio(require('./sounds/sent_sound_whatsapp.mp3'));
-
-    messageReceivedSound.current = new Audio(require('./sounds/message_received.mp3'));
-
-    receiverTypingSound.current = new Audio(require('./sounds/is_writing_whatsapp.mp3'));
-    receiverTypingSound.current.loop = true;
-  }
-
   let startRecording = () => {
     videoFrames.current = []
-    // setVideoFrames([])
     setDownloadingVideo(true)
-    // setWaitingDownload(true)
-    resetAudioElements()
 
     try {
       //start animation
@@ -559,46 +449,13 @@ function App() {
       // @ts-ignore
       canvas.height = chatRef.current!.offsetHeight;
 
-      // Capture the stream from the canvas with the desired frame rate
-      // @ts-ignore
-      canvasStreamRef.current = canvas.captureStream(30); // Specify the frame rate here, e.g., 30 FPS
-
-      // Combine audio and canvas streams
-      const combinedStream = new MediaStream([
-        // @ts-ignore
-        ...canvasStreamRef.current.getVideoTracks(),
-        // ...mixedOutput!.stream.getAudioTracks(),
-      ]);
-
-      const mimeType = MediaRecorder.isTypeSupported("video/mp4") ? "video/mp4" : "video/webm"
-
-      // Initialize the MediaRecorder with the stream and specify the bit rate
-      // @ts-ignore
-      mediaRecorderRef.current = new MediaRecorder(combinedStream, {
-        mimeType: mimeType
-      });
-
-      // Handle the data available event
-      // @ts-ignore
-      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          setRecordedChunks(prev => [...prev, event.data]);
-        }
-      };
-
-      // @ts-ignore
-      mediaRecorderRef.current.start();
-
-      // Capture the frame
-      // captureFrameFbF(FrameType.SILENT)
-
     } catch (error) {
       console.log("Error log from startRecording", error);
     }
   }
 
 
-  function extractTime(stderrLine: string): number | null {
+  const extractTime = (stderrLine: string): number | null => {
     const match = stderrLine.match(/time=([0-9:.]+)/);
     const time = match ? match[1] : null;
     if (time) {
@@ -607,7 +464,7 @@ function App() {
     return null
   }
 
-  function timeToMilliseconds(time: string): number {
+  const timeToMilliseconds = (time: string): number => {
     const parts = time.split(':');
     const hours = parseInt(parts[0], 10);
     const minutes = parseInt(parts[1], 10);
@@ -618,7 +475,6 @@ function App() {
   }
 
   ffmpeg.on("log", ({type, message}) => {
-    console.log("log message", message)
     const parsedMessage = extractTime(message)
     if (parsedMessage && videoDuration) {
       // convert to ms
@@ -626,10 +482,8 @@ function App() {
     }
   })
 
-  ffmpeg.on("progress", ({progress, time}) => {
-    // console.log("progress progress", progress)
-    console.log("progress time", time)
-  })
+  /*  ffmpeg.on("progress", ({progress, time}) => {
+    })*/
 
   const getConsecutiveOccurrences = (list: FrameType[]): { frameType: FrameType, index: number, nbFrames: number }[] => {
     const result: Array<{ frameType: FrameType, index: number, nbFrames: number }> = [];
@@ -699,7 +553,6 @@ function App() {
       // set video duration in ms
       setVideoDuration(videoTime)
 
-      console.log(videoFrames)
       // Write frames to FFmpeg's virtual file system and build the concat file content
       for (let index = 0; index < videoFrames.current.length; index++) {
         const videoFrame = videoFrames.current[index];
@@ -742,7 +595,6 @@ function App() {
         '-filter_complex', filterComplex, // Corrected filter_complex
         '-map', '[v]',
         '-map', '[audio_mix]',
-        '-shortest',
         '-c:v', 'libx264', // Video codec
         '-pix_fmt', 'yuv420p', // Pixel format specified once
         '-c:a', 'aac', // Audio codec
@@ -808,6 +660,9 @@ function App() {
   })
 
   const updateMessage = (action: MessageActions, index: number, message?: Message) => {
+    const messagesLength = messages.length
+    index = messagesLength - index - 1
+
     const swapElements = (index1: number, index2: number): any[] => {
       const newArray = [...messages];
       let temp = newArray[index1];
@@ -836,7 +691,7 @@ function App() {
       case MessageActions.DOWN:
         if (updatedMessages.length <= 1 || index === updatedMessages.length - 1) return;
         setMessageOptionsDisplayed({
-          index: index + 1,
+          index: messages.length - 2 - index,
           display: true
         })
         setMessages(swapElements(index, index + 1))
@@ -844,7 +699,7 @@ function App() {
       case MessageActions.UP:
         if (updatedMessages.length <= 1 || index === 0) return;
         setMessageOptionsDisplayed({
-          index: index - 1,
+          index: messages.length - index,
           display: true
         })
         setMessages(swapElements(index, index - 1))
@@ -1118,7 +973,6 @@ function App() {
                   </button>
                   <button disabled={simulateMessageOn} className="col btn btn-primary"
                           onClick={() => {
-                            resetAudioElements()
                             simulateAllChat()
                           }
                           }>Simulate
@@ -1146,7 +1000,8 @@ function App() {
             </div>
             <div className="col">
               <div className={"chat-blurry-container"}>
-                <div ref={chatRef} className={`chat-container ${downloadingVideo ? 'blur' : ''}`}>
+                {/*<div ref={chatRef} className={`chat-container ${downloadingVideo ? 'blur' : ''}`}>*/}
+                <div ref={chatRef} className={`chat-container ${downloadingVideo ? '' : ''}`}>
                   {showHeaderChecked && <div className="phone-top-bar">
                     <span className="time">{time} am</span>
                     <span className="network-status">
@@ -1177,18 +1032,19 @@ function App() {
                       <span><FontAwesomeIcon icon={faEllipsisV}/></span>
                     </div>
                   </div>
-                  <div className="chat-messages" id="chatMessages">
-                    {messages.map((message, index) => {
-                      return (
-                          <MessageComponent
-                              key={index}
-                              index={index}
-                              message={message}
-                              updateMessage={(action, message) => updateMessage(action, index, message)}
-                              messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
-                              simulateMessageOn={simulateMessageOn}/>
-                      )
-                    })}
+                  <div className="chat-messages chat-messages-container" id="chatMessages">
+                    {
+                      messages.slice().reverse().map((message, index) => {
+                        return (
+                            <MessageComponent
+                                key={index}
+                                index={index}
+                                message={message}
+                                updateMessage={(action, message) => updateMessage(action, index, message)}
+                                messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
+                                simulateMessageOn={simulateMessageOn}/>
+                        )
+                      })}
                     <div ref={endOfMessagesRef}/>
                   </div>
                   {<div className="message-bar">

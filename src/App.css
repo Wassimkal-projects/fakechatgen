@@ -45,7 +45,8 @@ body {
 
 .message-bar {
   display: flex;
-  align-items: center;
+  flex: 1;
+  align-items: flex-end;
   padding: 3px;
 }
 
@@ -283,8 +284,9 @@ body {
 }
 
 .chat-messages {
-  flex: 1;
+  display: flex;
   padding: 5px 2px;
+  flex-direction: column-reverse;
   overflow-y: auto;
 }
 
