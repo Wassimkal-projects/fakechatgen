@@ -264,7 +264,7 @@ function App() {
 
     captureAndProceed()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [simulateTypingMessage, input])
+  }, [simulateTypingMessage, input, messagesSim])
 
   // useEffect to simulate the chat
   useEffect(() => {
