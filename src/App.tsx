@@ -64,7 +64,7 @@ function App() {
 
 
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messagesSim, setMessagesSim] = useState<Message[]>([]);
+  const messagesSim = useRef<Message[]>([]);
 
   // Message typed by the user
   const [inputMessage, setInputMessage] = useState<string>('')
@@ -214,7 +214,7 @@ function App() {
   useEffect(() => {
     const captureAndProceed = async () => {
       // update input
-      const currentMessage = messagesSim[currentMessageIndex]
+      const currentMessage = messagesSim.current[currentMessageIndex]
       if (simulateTypingMessage && currentMessage) {
         // captureFrame
         // if not first render, captureFrame
@@ -251,7 +251,7 @@ function App() {
             messageSentSound.current.play().then(() => {
               setCurrentMessageIndex(currentMessageIndex + 1);
             });
-            if (currentMessageIndex === messagesSim.length - 1) {
+            if (currentMessageIndex === messagesSim.current.length - 1) {
               setTimeout(() => {
                 setSimulateMessageOn(false)
                 stopRecording();
@@ -264,7 +264,7 @@ function App() {
 
     captureAndProceed()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [simulateTypingMessage, input, messagesSim])
+  }, [simulateTypingMessage, input])
 
   // useEffect to simulate the chat
   useEffect(() => {
@@ -290,7 +290,7 @@ function App() {
               setCurrentMessageIndex(currentMessageIndex + 1);
             });
 
-            if (currentMessageIndex === messagesSim.length - 1) {
+            if (currentMessageIndex === messagesSim.current.length - 1) {
               setTimeout(() => {
                 setSimulateMessageOn(false)
                 stopRecording();
@@ -312,7 +312,7 @@ function App() {
         sendMessage(message)
         messageSentSound.current.play();
         setCurrentMessageIndex(currentMessageIndex + 1);
-        if (currentMessageIndex === messagesSim.length - 1) {
+        if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
             stopRecording();
@@ -325,7 +325,7 @@ function App() {
         sendMessage(message)
         messageSentSound.current.play();
         setCurrentMessageIndex(currentMessageIndex + 1);
-        if (currentMessageIndex === messagesSim.length - 1) {
+        if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
             stopRecording();
@@ -338,17 +338,17 @@ function App() {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
 
-      if (currentMessageIndex > 0 && isTyping && messagesSim.length > 0) {
-        if (messagesSim[currentMessageIndex - 1].imageMessage) {
+      if (currentMessageIndex > 0 && isTyping && messagesSim.current.length > 0) {
+        if (messagesSim.current[currentMessageIndex - 1].imageMessage) {
           setTimeout(() => {
-            if (messagesSim[currentMessageIndex - 1].received) {
+            if (messagesSim.current[currentMessageIndex - 1].received) {
               captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
             } else {
               captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
             }
           }, 500)
         } else {
-          if (messagesSim[currentMessageIndex - 1].received) {
+          if (messagesSim.current[currentMessageIndex - 1].received) {
             captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
           } else {
             captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
@@ -356,9 +356,9 @@ function App() {
         }
       }
       // **** End *****
-      if (isTyping && currentMessageIndex < messagesSim.length) {
+      if (isTyping && currentMessageIndex < messagesSim.current.length) {
         setTimeout(() => {
-          const message = messagesSim[currentMessageIndex];
+          const message = messagesSim.current[currentMessageIndex];
           if (!message.received) {
             if (message.text) {
               simulateTypingMessage()
@@ -380,24 +380,8 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTyping, currentMessageIndex, messagesSim]);
 
-  /*  // Use effect to scroll down after each message displayed
-    useEffect(() => {
-      if (simulateMessageOn) {
-        if (messages[messages.length - 1]?.imageMessage) {
-          setTimeout(() => {
-            // @ts-ignore
-            endOfMessagesRef.current?.scrollIntoView();
-          }, 200)
-        } else {
-          // @ts-ignore
-          endOfMessagesRef.current?.scrollIntoView();
-        }
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [messages.length]);*/
-
   useEffect(() => {
-    if (currentMessageIndex >= messagesSim.length) {
+    if (currentMessageIndex >= messagesSim.current.length) {
       setIsTyping(false); // Stop typing when all messages are done
     }
   }, [currentMessageIndex, messagesSim]);
@@ -409,10 +393,10 @@ function App() {
     // TODO hide all options
     setSimulateMessageOn(true)
 
-    setMessagesSim(
-        messages.map(message => message)
-    )
-
+    /*    setMessagesSim(
+            messages.map(message => message)
+        )*/
+    messagesSim.current = messages
     setMessages([])
     if (!isTyping) {
       setIsTyping(true);
@@ -1084,7 +1068,7 @@ function App() {
                         <div className="spinner-border" role="status">
                           <span className="sr-only">Loading...</span>
                         </div>
-                        <strong>{`Loading ${messages.length}/${messagesSim.length}`}</strong>
+                        <strong>{`Loading ${messages.length}/${messagesSim.current.length}`}</strong>
                       </div>
                     </div>
 
