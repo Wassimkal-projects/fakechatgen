@@ -212,8 +212,10 @@ function App() {
 
   // simulateTypingMessage
   useEffect(() => {
+    console.log('captureAndProceed')
     const captureAndProceed = async () => {
       // update input
+      console.log('captureAndProceed')
       const currentMessage = messagesSim.current[currentMessageIndex]
       if (simulateTypingMessage && currentMessage) {
         // captureFrame
@@ -268,6 +270,8 @@ function App() {
 
   // useEffect to simulate the chat
   useEffect(() => {
+    console.log('useEffect')
+
     try {
       // functions
       const simulateReceivingMessage = (message: Message) => {
@@ -302,9 +306,10 @@ function App() {
 
       // launches useEffect
       const simulateTypingMessage = () => {
-        senderTypingSound.current.play().then(() => {
-          setSimulateTypingMessage(true)
-        });
+        console.log('simulateTypingMessage')
+        senderTypingSound.current.play()
+        console.log('setSimulateTypingMessage(true)')
+        setSimulateTypingMessage(true)
       }
 
       const simulateSendingImage = (message: Message) => {
@@ -333,6 +338,8 @@ function App() {
         }
       }
 
+      console.log('captureSilent')
+
       // **** Add frame of delay between messages *****
       if (currentMessageIndex === 0) {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
@@ -356,6 +363,10 @@ function App() {
         }
       }
       // **** End *****
+      console.log('currentMessageIndex', currentMessageIndex)
+      console.log('isTyping2', isTyping)
+      console.log('messagesSim.current.length', messagesSim.current.length)
+
       if (isTyping && currentMessageIndex < messagesSim.current.length) {
         setTimeout(() => {
           const message = messagesSim.current[currentMessageIndex];
@@ -381,7 +392,9 @@ function App() {
   }, [isTyping, currentMessageIndex, messagesSim]);
 
   useEffect(() => {
+    console.log('useEffect isTyping')
     if (currentMessageIndex >= messagesSim.current.length) {
+      console.log('useEffect isTyping inside')
       setIsTyping(false); // Stop typing when all messages are done
     }
   }, [currentMessageIndex, messagesSim]);
@@ -389,7 +402,7 @@ function App() {
 
   const simulateAllChat = () => {
     if (messages.length < 1) return;
-
+    console.log('simulateAll')
     // TODO hide all options
     setSimulateMessageOn(true)
 
@@ -399,6 +412,7 @@ function App() {
     messagesSim.current = messages
     setMessages([])
     if (!isTyping) {
+      console.log('isTyping')
       setIsTyping(true);
       setCurrentMessageIndex(0);
       // input!.textContent = '';
