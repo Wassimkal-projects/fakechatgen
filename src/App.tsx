@@ -76,6 +76,8 @@ function App() {
   const typingSpeed = 90; // Speed in milliseconds
   const delayBetweenMessages = 1000;
   const responseTime = 2000;
+  const delayAfterConvEnd = 2000;
+  const FPS = 30;
 
   const endOfMessagesRef = useRef(null);
   const [receiverName, setReceiverName] = useState('John Doe');
@@ -92,8 +94,6 @@ function App() {
   //** Typing props to see ** //
 
   const chatRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const canvasStreamRef = useRef(null);
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
   const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
   const [showPercentageChecked, setShowPercentageChecked] = useState(true)
@@ -104,7 +104,8 @@ function App() {
 
   /*  */
   const [downloadProgress, setDownloadProgress] = useState<number>(0)
-  const [videoDuration, setVideoDuration] = useState<number>(0)
+  const videoDuration = useRef<number>(0)
+  const numberOfFrames = useRef<number>(0)
   /*  */
 
   const videoFrames = useRef<VideoFrame[]>([]);
@@ -165,13 +166,12 @@ function App() {
       },
       [simulateMessageOn])
 
-  const captureFrameFbF = async (frameType: FrameType, frameDuration?: number) => {
+  const captureFrameFbF = async (frameType: FrameType, frameDuration: number) => {
     if (!downloadingVideo) return;
     if (chatRef.current) {
       try {
         const capturedCanvas = await html2canvas(chatRef.current, {
           scale: 2,
-          useCORS: true,
           logging: false
         });
         const blobPromise = new Promise<Blob | null>((resolve, reject) => {
@@ -188,8 +188,9 @@ function App() {
         videoFrames.current.push({
           frame: blob,
           frameType: frameType,
-          duration: frameDuration ? (frameDuration / 1000) : 0.2 // Using a default duration if not provided
+          duration: frameDuration / 1000
         });
+
       } catch (error) {
         console.log("Error from capture frame", error);
       }
@@ -212,10 +213,8 @@ function App() {
 
   // simulateTypingMessage
   useEffect(() => {
-    console.log('captureAndProceed')
     const captureAndProceed = async () => {
       // update input
-      console.log('captureAndProceed')
       const currentMessage = messagesSim.current[currentMessageIndex]
       if (simulateTypingMessage && currentMessage) {
         // captureFrame
@@ -255,8 +254,7 @@ function App() {
             if (currentMessageIndex === messagesSim.current.length - 1) {
               setTimeout(() => {
                 setSimulateMessageOn(false)
-                stopRecording();
-              }, 2000)
+              }, delayAfterConvEnd)
             }
           }, delayBetweenMessages);
         }
@@ -268,11 +266,6 @@ function App() {
   }, [simulateTypingMessage, input])
 
   const doItPlease = () => {
-
-    console.log('doItPlease')
-    console.log('currentMessageIndex', currentMessageIndex)
-    console.log('messagesSim.current', messagesSim.current)
-
     try {
       // functions
       const simulateReceivingMessage = (message: Message) => {
@@ -293,21 +286,18 @@ function App() {
           messageReceivedSound.current.play()
           setReceiverStatus('Online')
           setCurrentMessageIndex(prev => prev + 1)
-            
+
           if (currentMessageIndex === messagesSim.current.length - 1) {
             setTimeout(() => {
               setSimulateMessageOn(false)
-              stopRecording();
-            }, 2000)
+            }, delayAfterConvEnd)
           }
         }, responseTime)
       }
 
       // launches useEffect
       const simulateTypingMessage = () => {
-        console.log('simulateTypingMessage')
         senderTypingSound.current.play()
-        console.log('setSimulateTypingMessage(true)')
         setSimulateTypingMessage(true)
       }
 
@@ -319,8 +309,7 @@ function App() {
         if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
-            stopRecording();
-          }, 2000)
+          }, delayAfterConvEnd)
         }
       }
 
@@ -332,31 +321,22 @@ function App() {
         if (currentMessageIndex === messagesSim.current.length - 1) {
           setTimeout(() => {
             setSimulateMessageOn(false)
-            stopRecording();
-          }, 2000)
+          }, delayAfterConvEnd)
         }
       }
-
-      console.log('captureSilent')
 
       // **** Add frame of delay between messages *****
       if (currentMessageIndex === 0) {
         captureFrameFbF(FrameType.SILENT, delayBetweenMessages)
       }
 
-      console.log('currentMessageIndex', currentMessageIndex)
-      console.log('isTyping2', isTyping.current)
-      console.log('messagesSim.current.length', messagesSim.current.length)
-
       if (currentMessageIndex > 0 && isTyping.current && messagesSim.current.length > 0) {
         if (messagesSim.current[currentMessageIndex - 1].imageMessage) {
-          setTimeout(() => {
-            if (messagesSim.current[currentMessageIndex - 1].received) {
-              captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
-            } else {
-              captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
-            }
-          }, 500)
+          if (messagesSim.current[currentMessageIndex - 1].received) {
+            captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
+          } else {
+            captureFrameFbF(FrameType.MESSAGE_SENT, delayBetweenMessages)
+          }
         } else {
           if (messagesSim.current[currentMessageIndex - 1].received) {
             captureFrameFbF(FrameType.MESSAGE_RECEIVED, delayBetweenMessages)
@@ -368,7 +348,6 @@ function App() {
       // **** End *****
 
       if (currentMessageIndex >= messagesSim.current.length) {
-        console.log('current recoit false')
         isTyping.current = false
         return;
       }
@@ -389,7 +368,7 @@ function App() {
               simulateRecevingImage(message)
             }
           }
-        }, 1000)
+        }, delayBetweenMessages)
       }
     } catch (error) {
       console.log("Error from useEffect", error)
@@ -413,8 +392,6 @@ function App() {
 
   const simulateAllChat = () => {
     if (messages.length < 1) return;
-    console.log('simulateAll')
-    console.log('isTyping', isTyping.current)
     // TODO hide all options
     setSimulateMessageOn(true)
 
@@ -425,8 +402,6 @@ function App() {
     setMessages([])
     if (!isTyping.current) {
       isTyping.current = true
-      console.log('isTyping', isTyping.current)
-      console.log('currentMessageIndex', currentMessageIndex)
       setCurrentMessageIndex(0)
       setInput('')
     }
@@ -465,31 +440,46 @@ function App() {
   }
 
 
-  const extractTime = (stderrLine: string): number | null => {
-    const match = stderrLine.match(/time=([0-9:.]+)/);
-    const time = match ? match[1] : null;
+  /*
+    const extractTime = (stderrLine: string): number | null => {
+      const match = stderrLine.match(/time=([0-9:.]+)/);
+      const time = match ? match[1] : null;
+      if (time) {
+        return timeToMilliseconds(time)
+      }
+      return null
+    }
+  */
+
+  const extractFrame = (stderrLine: string): number | null => {
+    const match = stderrLine.match(/frame=\s*(\d+)/);
+    const frame = match ? match[1] : null;
     if (time) {
-      return timeToMilliseconds(time)
+      return Number(frame)
     }
     return null
   }
 
-  const timeToMilliseconds = (time: string): number => {
-    const parts = time.split(':');
-    const hours = parseInt(parts[0], 10);
-    const minutes = parseInt(parts[1], 10);
-    const seconds = parseFloat(parts[2]); // Utiliser parseFloat pour gérer les secondes et millisecondes
+  /*  const timeToMilliseconds = (time: string): number => {
+      const parts = time.split(':');
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      const seconds = parseFloat(parts[2]); // Utiliser parseFloat pour gérer les secondes et millisecondes
 
-    // Convertir heures, minutes et secondes en millisecondes
-    return (hours * 3600 + minutes * 60 + seconds) * 1000;
-  }
+      // Convertir heures, minutes et secondes en millisecondes
+      return (hours * 3600 + minutes * 60 + seconds) * 1000;
+    }*/
 
   ffmpeg.on("log", ({type, message}) => {
-    const parsedMessage = extractTime(message)
-    if (parsedMessage && videoDuration) {
-      // convert to ms
-      setDownloadProgress(Math.round((parsedMessage / videoDuration) * 100))
+    const parsedFrame = extractFrame(message)
+    if (parsedFrame && numberOfFrames.current) {
+      setDownloadProgress(Math.min(Math.round((parsedFrame / numberOfFrames.current) * 100), 100))
     }
+
+    /*    const parsedMessage = extractTime(message)
+        if (parsedMessage && videoDuration.current) {
+          setDownloadProgress(Math.min(Math.round((parsedMessage / videoDuration.current) * 100), 100))
+        }*/
   })
 
   /*  ffmpeg.on("progress", ({progress, time}) => {
@@ -517,6 +507,7 @@ function App() {
 
   const convertFramesToVideo = async () => {
     try {
+      console.time('preparing-convert')
       // Load the FFmpeg core
       await ffmpeg.load();
 
@@ -561,7 +552,10 @@ function App() {
       })
 
       // set video duration in ms
-      setVideoDuration(videoTime)
+      videoDuration.current = videoTime
+      numberOfFrames.current = FPS * (videoTime / 1000)
+      console.log("Estimated number of frames: ", numberOfFrames.current)
+      console.log("Estimated duration", videoDuration.current)
 
       // Write frames to FFmpeg's virtual file system and build the concat file content
       for (let index = 0; index < videoFrames.current.length; index++) {
@@ -583,7 +577,7 @@ function App() {
       await ffmpeg.writeFile('input.txt', concatFileContent);
 
       // Write audio files, assuming they are accessible similar to videoFrames
-      const senderTypingSound = await fetchFile(require('./sounds/typing_sound_30s.mp3'));
+      const senderTypingSound = await fetchFile(require('./sounds/typing_sound_5s.mp3'));
       let messageSentSound = await fetchFile(require('./sounds/sent_sound_whatsapp.mp3'));
       let messageReceivedSound = await fetchFile(require('./sounds/message_received.mp3'));
       let receiverTypingSound = await fetchFile(require('./sounds/is_writing_whatsapp_original_2s.mp3'));
@@ -592,8 +586,11 @@ function App() {
       await ffmpeg.writeFile('message_received.mp3', messageReceivedSound);
       await ffmpeg.writeFile('receiver_typing_sound.mp3', receiverTypingSound);
 
-      filterComplex = '[0:v]setpts=PTS-STARTPTS[v]' + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
+      filterComplex = `[0:v]setpts=PTS-STARTPTS,fps=${FPS}[v]` + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
       // Execute the FFmpeg command using the concat demuxer to convert the images to a video
+      console.timeEnd('preparing-convert')
+
+      console.time('exec-execution-time')
       await ffmpeg.exec([
         '-f', 'concat',
         '-safe', '0',
@@ -612,6 +609,8 @@ function App() {
         'out.mp4' // Output file
       ]);
 
+      console.timeEnd('exec-execution-time')
+
       console.log("after exec")
 
       // Read the generated video file from the virtual file system
@@ -628,20 +627,6 @@ function App() {
       // downloadWithProgress(videoURL)
     } catch (e) {
       console.log(e)
-    }
-  };
-
-  const stopRecording = () => {
-    // @ts-ignore
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // @ts-ignore
-      mediaRecorderRef.current.stop();
-    }
-    if (canvasStreamRef.current) {
-      // @ts-ignore
-      canvasStreamRef.current.getTracks().forEach(track => {
-        track.stop()
-      });
     }
   };
 
@@ -986,7 +971,7 @@ function App() {
                           onClick={() => {
                             simulateAllChat()
                           }
-                          }>Simulate
+                          }>Play
                   </button>
                   <button disabled={messages.length === 0 || simulateMessageOn}
                           className="col btn btn-info"

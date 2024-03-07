@@ -14,7 +14,6 @@ body {
   min-width: 350px;
   max-width: 350px;
   margin: auto;
-  border: 1px solid #ccc;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -150,7 +149,7 @@ body {
   justify-content: space-between;
   padding: 4px 10px;
   background-color: #00a884;
-  color: black;
+  color: white;
   font-size: 14px;
 }
 
