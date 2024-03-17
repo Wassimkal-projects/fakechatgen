@@ -30,6 +30,7 @@ import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 import useAuthState from "../../hooks/auth-state-hook";
+import {loadSession, saveSession} from "../../utils/localStorage/local-storage";
 
 const ffmpeg = new FFmpeg()
 
@@ -54,6 +55,9 @@ export const MainComponent: React.FC<{
 
   const {currentUser} = useAuthState()
 
+  // load sessionStorage
+  const currentSession = loadSession()
+
   let senderTypingSound = useRef(new Audio(require('../../sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
 
@@ -70,13 +74,13 @@ export const MainComponent: React.FC<{
   const [input, setInput] = useState('')
 
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(currentSession.messages);
   const messagesSim = useRef<Message[]>([]);
 
   // Message typed by the user
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
-  const setProfilePictureSrcState = useState<string>(require("../../img/avatar.png"))
+  const setProfilePictureSrcState = useState<string>(currentSession.profilePicture)
 
   const isTyping = useRef<boolean>(false);
 
@@ -87,7 +91,7 @@ export const MainComponent: React.FC<{
   const FPS = 30;
 
   const endOfMessagesRef = useRef(null);
-  const [receiverName, setReceiverName] = useState('John Doe');
+  const [receiverName, setReceiverName] = useState(currentSession.receiversName);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
@@ -104,9 +108,9 @@ export const MainComponent: React.FC<{
   const chatRef = useRef(null);
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
   const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
-  const [showPercentageChecked, setShowPercentageChecked] = useState(true)
-  const [showHeaderChecked, setShowHeaderChecked] = useState(true)
-  const [network, setNetwork] = useState<string>('5G')
+  const [showPercentageChecked, setShowPercentageChecked] = useState(currentSession.showBatteryPercentage)
+  const [showHeaderChecked, setShowHeaderChecked] = useState(currentSession.showHeader)
+  const [network, setNetwork] = useState<string>(currentSession.network)
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
 
@@ -118,7 +122,7 @@ export const MainComponent: React.FC<{
 
   const videoFrames = useRef<VideoFrame[]>([]);
 
-  const [time, setTime] = useState<string>('15:11')
+  const [time, setTime] = useState<string>(currentSession.phoneTime)
   const [messageTime, setMessageTime] = useState<string>('15:11')
   const [activeTab, setActiveTab] = useState('person1'); // default tab to the first person
   const canvas = document.createElement('canvas');
@@ -133,6 +137,18 @@ export const MainComponent: React.FC<{
     setInputKey(Date.now())
   }, [imageMessage])
 
+  // Save session
+  useEffect(() => {
+    saveSession({
+      messages: messages,
+      network: network,
+      phoneTime: time,
+      receiversName: receiverName,
+      showBatteryPercentage: showPercentageChecked,
+      showHeader: showHeaderChecked,
+      profilePicture: setProfilePictureSrcState[0]
+    })
+  }, [messages, network, receiverName, setProfilePictureSrcState, showHeaderChecked, showPercentageChecked, time]);
 
   const handleMessageStatusChange = (event: any) => {
     setSelectedMessageStatus(event.target.id);
