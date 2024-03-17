@@ -1,9 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
-import {useAuth} from "../../hooks/auth-hook";
+import useAuthState from "../../hooks/auth-state-hook";
 
 const HeaderComponent = () => {
-  const authContext = useAuth();
+  // const authContext = useAuth();
+  const {currentUser, logout} = useAuthState()
 
   return (
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
@@ -26,8 +27,8 @@ const HeaderComponent = () => {
           <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul className="navbar-nav">
               <li className="nav-item">
-                {authContext?.user &&
-                    <a className="nav-link" href="/" onClick={authContext.logout}>Logout</a>
+                {currentUser &&
+                    <a className="nav-link" href="/" onClick={logout}>Logout</a>
                 }
               </li>
             </ul>

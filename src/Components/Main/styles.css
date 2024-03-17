@@ -60,6 +60,7 @@
   margin-right: 10px;
   background-color: white;
   max-height: 100px;
+  height: 40px;
   overflow: hidden; /* Ajouté pour gérer le débordement dans le conteneur flex */
 }
 
@@ -81,6 +82,7 @@
   width: 100%;
   overflow: auto;
   outline: none;
+  font-size: 12px;
   min-width: 0; /* Important pour permettre la réduction sous la largeur du contenu */
   overflow-wrap: break-word; /* Pour s'assurer que les longs mots sans espace se retournent */
 }
@@ -230,7 +232,7 @@
 
 .icon-clip {
   background: url('../../img/clip.png');
-  height: 25px;
+  height: 22px;
   width: 22px;
   display: block;
   background-size: cover;
@@ -240,13 +242,21 @@
 .icon-camera {
   background: url('../../img/camera.png');
   height: 22px;
-  width: 25px;
+  width: 22px;
   display: block;
   background-size: cover;
 }
 
 .icon-microphone {
   background: url('../../img/whatsapp-recoder.svg');
+  height: 40px;
+  width: 40px;
+  display: block;
+  background-size: cover;
+}
+
+.icon-right-arrow {
+  background: url('../../img/send_button.png');
   height: 40px;
   width: 40px;
   display: block;

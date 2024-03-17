@@ -8,7 +8,7 @@ import html2canvas from "html2canvas";
 import {PhotoProfilModale} from "../PhotoProfilModale/component";
 import {MessageComponent} from "../MessageComponent/component";
 import {MessageActions, MessageStatus} from "../../enums/enums";
-import {Message, MessageDisplayed} from "../../utils/types/types";
+import {Message, MessageDisplayed, ReactState} from "../../utils/types/types";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -29,6 +29,7 @@ import {toDateInHumanFormat, toDateInUsFormat} from "../../utils/date/dates";
 import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
+import useAuthState from "../../hooks/auth-state-hook";
 
 const ffmpeg = new FFmpeg()
 
@@ -47,7 +48,12 @@ interface VideoFrame {
   frameIndex: number;
 }
 
-export const MainComponent = () => {
+export const MainComponent: React.FC<{
+  authModalState: ReactState<boolean>
+}> = ({authModalState}) => {
+
+  const {currentUser} = useAuthState()
+
   let senderTypingSound = useRef(new Audio(require('../../sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
 
@@ -85,6 +91,7 @@ export const MainComponent = () => {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
+  const [encodingOnProgress, setEncodingOnProgress] = useState(false)
   const [inputKey, setInputKey] = useState(Date.now());
 
 
@@ -160,12 +167,143 @@ export const MainComponent = () => {
     }
   }, [])
 
+  const convertFramesToVideo = async () => {
+    try {
+      console.log('how?')
+      setEncodingOnProgress(true)
+      console.time('preparing-convert')
+      // Load the FFmpeg core
+      await ffmpeg.load();
+
+      // Initialize a variable to store the concat demuxer file content
+      let concatFileContent = '';
+
+      // interactions strats after 1 second,
+      let videoTime = 0;
+      let filterComplex = '';
+      let audioMix: string[] = [];
+      const timeAndDuration = getConsecutiveOccurrences(
+          videoFrames.current
+          .sort((a, b) => a.frameIndex - b.frameIndex)
+          .map(frame => frame.frameType))
+
+      timeAndDuration.forEach((timeAndDuration, index) => {
+        if (timeAndDuration.frameType === FrameType.SILENT) {
+          videoTime += timeAndDuration.nbFrames * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
+        } else if (timeAndDuration.frameType === FrameType.CHAR_TYPE) {
+          const duration = (timeAndDuration.nbFrames * typingSpeed)
+          filterComplex += `;[1:a]aloop=loop=-1:size=2e+09,atrim=duration=${duration / 1000},adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        } else if (timeAndDuration.frameType === FrameType.MESSAGE_SENT) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[2:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        } else if (timeAndDuration.frameType === FrameType.RECEIVER_TYPING) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[4:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        } else if (timeAndDuration.frameType === FrameType.MESSAGE_RECEIVED) {
+          const duration = delayBetweenMessages
+          filterComplex += `;[3:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
+          audioMix.push(`[aud_${index}]`)
+          videoTime += duration
+        }
+
+      })
+
+      // set video duration in ms
+      videoDuration.current = videoTime
+      numberOfFrames.current = FPS * (videoTime / 1000)
+      console.log("Estimated number of frames: ", numberOfFrames.current)
+      console.log("Estimated duration", videoDuration.current)
+
+      // Write frames to FFmpeg's virtual file system and build the concat file content
+      for (let index = 0; index < videoFrames.current.length; index++) {
+        const videoFrame = videoFrames.current[index];
+        const data = await fetchFile(videoFrame.frame!);
+        await ffmpeg.writeFile(`frame${index}.jpg`, data);
+
+        // Add each frame and its duration to the concat file content
+        // Assuming each image should be displayed for 2 seconds
+        concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
+      }
+
+      // Add the last file again without specifying duration to avoid freezing on the last frame
+      if (videoFrames.current.length > 0) {
+        concatFileContent += `file 'frame${videoFrames.current.length - 1}.jpg'\n`;
+      }
+
+      // Write the concat file content to FFmpeg's virtual file system
+      await ffmpeg.writeFile('input.txt', concatFileContent);
+
+      // Write audio files, assuming they are accessible similar to videoFrames
+      const senderTypingSound = await fetchFile(require('../../sounds/typing_sound_5s.mp3'));
+      let messageSentSound = await fetchFile(require('../../sounds/sent_sound_whatsapp.mp3'));
+      let messageReceivedSound = await fetchFile(require('../../sounds/message_received.mp3'));
+      let receiverTypingSound = await fetchFile(require('../../sounds/is_writing_whatsapp_original_2s.mp3'));
+      await ffmpeg.writeFile('sender_typing_sound.mp3', senderTypingSound);
+      await ffmpeg.writeFile('message_sent.mp3', messageSentSound);
+      await ffmpeg.writeFile('message_received.mp3', messageReceivedSound);
+      await ffmpeg.writeFile('receiver_typing_sound.mp3', receiverTypingSound);
+
+      filterComplex = `[0:v]setpts=PTS-STARTPTS,fps=${FPS}[v]` + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
+      // Execute the FFmpeg command using the concat demuxer to convert the images to a video
+      console.timeEnd('preparing-convert')
+
+      console.time('exec-execution-time')
+      await ffmpeg.exec([
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', 'input.txt', // Video input from concatenated images
+        '-i', 'sender_typing_sound.mp3', // Audio input
+        '-i', 'message_sent.mp3', // Audio input
+        '-i', 'message_received.mp3', // Audio input
+        '-i', 'receiver_typing_sound.mp3', // Audio input
+        '-filter_complex', filterComplex, // Corrected filter_complex
+        '-map', '[v]',
+        '-map', '[audio_mix]',
+        '-shortest',
+        '-c:v', 'libx264', // Video codec
+        '-pix_fmt', 'yuv420p', // Pixel format specified once
+        '-c:a', 'aac', // Audio codec
+        'out.mp4' // Output file
+      ]);
+
+      console.timeEnd('exec-execution-time')
+
+      console.log("after exec")
+
+      // Read the generated video file from the virtual file system
+      const data = await ffmpeg.readFile('out.mp4');
+
+      console.log("after readFile out.mp4")
+
+      // Create a URL for the video file
+      const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
+      console.log("videoUrl", videoURL);
+
+      // Use this videoURL to display the video or download it
+      downloadRecording(videoURL);
+
+      setEncodingOnProgress(false)
+      // downloadWithProgress(videoURL)
+    } catch (e) {
+      console.log(e)
+    }
+  };
+
   useEffect(() => {
-        if (!simulateMessageOn) {
+        if (!simulateMessageOn && downloadingVideo) {
+          convertFramesToVideo()
           setDownloadingVideo(false)
+          setDownloadProgress(0)
         }
       },
-      [simulateMessageOn])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [downloadingVideo, simulateMessageOn])
 
   const captureFrameFbF = (frameType: FrameType, frameDuration: number) => {
     if (!downloadingVideo) return;
@@ -408,6 +546,11 @@ export const MainComponent = () => {
   }, [recordedChunks])
 
   let startRecording = () => {
+    if (!currentUser) {
+      authModalState[1](true)
+      return
+    }
+
     videoFrames.current = []
     setDownloadingVideo(true)
     try {
@@ -473,130 +616,6 @@ export const MainComponent = () => {
 
     return result;
   }
-
-  const convertFramesToVideo = async () => {
-    try {
-      console.time('preparing-convert')
-      // Load the FFmpeg core
-      await ffmpeg.load();
-
-      // Initialize a variable to store the concat demuxer file content
-      let concatFileContent = '';
-
-      // interactions strats after 1 second,
-      let videoTime = 0;
-      let filterComplex = '';
-      let audioMix: string[] = [];
-      const timeAndDuration = getConsecutiveOccurrences(
-          videoFrames.current
-          .sort((a, b) => a.frameIndex - b.frameIndex)
-          .map(frame => frame.frameType))
-
-      timeAndDuration.forEach((timeAndDuration, index) => {
-        if (timeAndDuration.frameType === FrameType.SILENT) {
-          videoTime += timeAndDuration.nbFrames * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
-        } else if (timeAndDuration.frameType === FrameType.CHAR_TYPE) {
-          const duration = (timeAndDuration.nbFrames * typingSpeed)
-          filterComplex += `;[1:a]aloop=loop=-1:size=2e+09,atrim=duration=${duration / 1000},adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
-          audioMix.push(`[aud_${index}]`)
-          videoTime += duration
-        } else if (timeAndDuration.frameType === FrameType.MESSAGE_SENT) {
-          const duration = delayBetweenMessages
-          filterComplex += `;[2:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
-          audioMix.push(`[aud_${index}]`)
-          videoTime += duration
-        } else if (timeAndDuration.frameType === FrameType.RECEIVER_TYPING) {
-          const duration = delayBetweenMessages
-          filterComplex += `;[4:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
-          audioMix.push(`[aud_${index}]`)
-          videoTime += duration
-        } else if (timeAndDuration.frameType === FrameType.MESSAGE_RECEIVED) {
-          const duration = delayBetweenMessages
-          filterComplex += `;[3:a]adelay=${videoTime}|${videoTime}[aud_${index}]`
-          audioMix.push(`[aud_${index}]`)
-          videoTime += duration
-        }
-
-      })
-
-      // set video duration in ms
-      videoDuration.current = videoTime
-      numberOfFrames.current = FPS * (videoTime / 1000)
-      console.log("Estimated number of frames: ", numberOfFrames.current)
-      console.log("Estimated duration", videoDuration.current)
-
-      // Write frames to FFmpeg's virtual file system and build the concat file content
-      for (let index = 0; index < videoFrames.current.length; index++) {
-        const videoFrame = videoFrames.current[index];
-        const data = await fetchFile(videoFrame.frame!);
-        await ffmpeg.writeFile(`frame${index}.jpg`, data);
-
-        // Add each frame and its duration to the concat file content
-        // Assuming each image should be displayed for 2 seconds
-        concatFileContent += `file 'frame${index}.jpg'\nduration ${videoFrame.duration}\n`;
-      }
-
-      // Add the last file again without specifying duration to avoid freezing on the last frame
-      if (videoFrames.current.length > 0) {
-        concatFileContent += `file 'frame${videoFrames.current.length - 1}.jpg'\n`;
-      }
-
-      // Write the concat file content to FFmpeg's virtual file system
-      await ffmpeg.writeFile('input.txt', concatFileContent);
-
-      // Write audio files, assuming they are accessible similar to videoFrames
-      const senderTypingSound = await fetchFile(require('../../sounds/typing_sound_5s.mp3'));
-      let messageSentSound = await fetchFile(require('../../sounds/sent_sound_whatsapp.mp3'));
-      let messageReceivedSound = await fetchFile(require('../../sounds/message_received.mp3'));
-      let receiverTypingSound = await fetchFile(require('../../sounds/is_writing_whatsapp_original_2s.mp3'));
-      await ffmpeg.writeFile('sender_typing_sound.mp3', senderTypingSound);
-      await ffmpeg.writeFile('message_sent.mp3', messageSentSound);
-      await ffmpeg.writeFile('message_received.mp3', messageReceivedSound);
-      await ffmpeg.writeFile('receiver_typing_sound.mp3', receiverTypingSound);
-
-      filterComplex = `[0:v]setpts=PTS-STARTPTS,fps=${FPS}[v]` + filterComplex + `;${audioMix.join('')}amix=inputs=${audioMix.length}[audio_mix]`
-      // Execute the FFmpeg command using the concat demuxer to convert the images to a video
-      console.timeEnd('preparing-convert')
-
-      console.time('exec-execution-time')
-      await ffmpeg.exec([
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', 'input.txt', // Video input from concatenated images
-        '-i', 'sender_typing_sound.mp3', // Audio input
-        '-i', 'message_sent.mp3', // Audio input
-        '-i', 'message_received.mp3', // Audio input
-        '-i', 'receiver_typing_sound.mp3', // Audio input
-        '-filter_complex', filterComplex, // Corrected filter_complex
-        '-map', '[v]',
-        '-map', '[audio_mix]',
-        '-shortest',
-        '-c:v', 'libx264', // Video codec
-        '-pix_fmt', 'yuv420p', // Pixel format specified once
-        '-c:a', 'aac', // Audio codec
-        'out.mp4' // Output file
-      ]);
-
-      console.timeEnd('exec-execution-time')
-
-      console.log("after exec")
-
-      // Read the generated video file from the virtual file system
-      const data = await ffmpeg.readFile('out.mp4');
-
-      console.log("after readFile out.mp4")
-
-      // Create a URL for the video file
-      const videoURL = URL.createObjectURL(new Blob([data], {type: 'video/mp4'}));
-      console.log("videoUrl", videoURL);
-
-      // Use this videoURL to display the video or download it
-      downloadRecording(videoURL);
-      // downloadWithProgress(videoURL)
-    } catch (e) {
-      console.log(e)
-    }
-  };
 
   const downloadImage = () => {
     if (chatRef.current) {
@@ -670,7 +689,12 @@ export const MainComponent = () => {
         break;
       case MessageActions.LEFT:
       case MessageActions.RIGHT:
-        updatedMessages[index].received = !updatedMessages[index].received
+        updatedMessages[index] = {
+          ...updatedMessages[index],
+          received: !updatedMessages[index].received,
+          displayTail: index === 0 ? true : updatedMessages[index].received === updatedMessages[index - 1].received,
+
+        }
         setMessages(updatedMessages)
         break;
     }
@@ -941,31 +965,23 @@ export const MainComponent = () => {
                           }
                           }>Play
                   </button>
-                  <button disabled={messages.length === 0 || simulateMessageOn}
-                          className="col btn btn-info"
-                          onClick={startRecording}>
+                  <button
+                      disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
+                      className="col btn btn-info"
+                      onClick={startRecording}>
 
                     {downloadingVideo &&
                         <span className="spinner-grow spinner-grow-sm mx-2" role="status"
                               aria-hidden="true"/>}
                     Get video
                   </button>
-                  <button disabled={messages.length === 0 || simulateMessageOn}
-                          className="col btn btn-info"
-                          onClick={convertFramesToVideo}>
-
-                    {downloadingVideo &&
-                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                              aria-hidden="true"/>}
-                    Download {downloadProgress}%
-                  </button>
                 </div>
               </div>
             </div>
             <div className="col">
               <div className={"chat-blurry-container"}>
-                {/*<div ref={chatRef} className={`chat-container ${downloadingVideo ? 'blur' : ''}`}>*/}
-                <div ref={chatRef} className={`chat-container ${downloadingVideo ? '' : ''}`}>
+                <div ref={chatRef}
+                     className={`chat-container ${(downloadingVideo || encodingOnProgress) ? 'blur' : ''}`}>
                   {showHeaderChecked && <div className="phone-top-bar">
                     <span className="time">{time} am</span>
                     <span className="network-status">
@@ -1035,11 +1051,10 @@ export const MainComponent = () => {
                     </div>
                     <span className={"whatsapp-actions"}>
                   <div className={"emoji-container"}>
-                  <span className={"icon-microphone center-icon"}/>
+                    {input ? <span className={"icon-right-arrow center-icon"}/> :
+                        <span className={"icon-microphone center-icon"}/>}
                   </div>
                   </span>
-
-
                   </div>}
                 </div>
                 {downloadingVideo && (
@@ -1048,10 +1063,19 @@ export const MainComponent = () => {
                         <div className="spinner-border" role="status">
                           <span className="sr-only">Loading...</span>
                         </div>
-                        <strong>{`Loading ${messages.length}/${messagesSim.current.length}`}</strong>
+                        <strong>{`Recording messages ${messages.length}/${messagesSim.current.length}`}</strong>
                       </div>
                     </div>
-
+                )}
+                {encodingOnProgress && (
+                    <div className="spinner-container">
+                      <div className="d-flex flex-column align-items-center">
+                        <div className="spinner-border" role="status">
+                          <span className="sr-only">Loading...</span>
+                        </div>
+                        <strong>Encoding video {downloadProgress}%</strong>
+                      </div>
+                    </div>
                 )}
               </div>
               <div className={"generate-buttons"}>
@@ -1060,7 +1084,7 @@ export const MainComponent = () => {
                   Image
                 </button>
 
-                <button disabled={messages.length === 0 || simulateMessageOn}
+                <button disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
                         className="btn btn-info"
                         onClick={startRecording}>
 

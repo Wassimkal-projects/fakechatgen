@@ -6,45 +6,13 @@ import {firebaseConfig} from '../firebase/firebase-config';
 import * as firebaseui from 'firebaseui';
 import 'firebaseui/dist/firebaseui.css';
 import StyledFirebaseAuth from "./StyledFirebaseAuth/component";
-import {useMemo, useState} from "react";
-import {AuthContextType} from "../context/auth-context";
-// import User = firebase.User;
 
-export const AuthComponent: React.FC<{
-  setAuthContext: (autContext: AuthContextType) => void
-}> = ({setAuthContext}) => {
+export const AuthComponent: React.FC<{}> = () => {
   // Initialize Firebase
-
-  const [authUser, setAuthUser] = useState<any | null>(null)
 
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
-
-  const logout = () => {
-    firebase.auth().signOut().then(user => {
-      console.log(user + ' signed out')
-    })
-  }
-
-  const handleAuthContextChange = useMemo(() => (user: any | null) => {
-    setAuthContext({
-      user: user,
-      logout: logout
-    })
-  }, [setAuthContext])
-
-  firebase.auth().onAuthStateChanged((user: any | null) => {
-    if (user !== authUser) {
-      if (user) {
-        setAuthUser(user)
-        handleAuthContextChange(user)
-      } else {
-        setAuthUser(null)
-        handleAuthContextChange(user)
-      }
-    }
-  });
 
   // Configure FirebaseUI.
   const uiConfig = {
@@ -65,7 +33,7 @@ export const AuthComponent: React.FC<{
 
   return (
       <>
-        {!authUser && <div>
+        {<div>
           <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()}/>
         </div>}
       </>
