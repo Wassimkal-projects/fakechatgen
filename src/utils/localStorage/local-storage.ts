@@ -2,7 +2,7 @@ import {Message} from "../types/types";
 
 interface SessionState {
   receiversName: string;
-  profilePicture: any;
+  profilePicture: string;
   showHeader: boolean;
   showBatteryPercentage: boolean;
   network: string;

@@ -30,7 +30,13 @@ import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 import useAuthState from "../../hooks/auth-state-hook";
-import {loadSession, saveSession} from "../../utils/localStorage/local-storage";
+import {loadSession} from "../../utils/localStorage/local-storage";
+import {
+  retrieveSessionState,
+  SessionState,
+  storeSessionState
+} from "../../utils/indexedDB/indexed-db";
+import {toStorableSessionState} from "../../mappers/session-state-mapper";
 
 const ffmpeg = new FFmpeg()
 
@@ -55,9 +61,6 @@ export const MainComponent: React.FC<{
 
   const {currentUser} = useAuthState()
 
-  // load sessionStorage
-  const currentSession = loadSession()
-
   let senderTypingSound = useRef(new Audio(require('../../sounds/typing_sound_whatsapp.mp3')));
   senderTypingSound.current.loop = true;
 
@@ -73,14 +76,21 @@ export const MainComponent: React.FC<{
   const inputRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
 
+  const currentSession = loadSession()
 
+  const [time, setTime] = useState<string>(currentSession.phoneTime)
+  const [showPercentageChecked, setShowPercentageChecked] = useState(currentSession.showBatteryPercentage)
+  const [showHeaderChecked, setShowHeaderChecked] = useState(currentSession.showHeader)
+  const [network, setNetwork] = useState<string>(currentSession.network)
+  const [receiverName, setReceiverName] = useState(currentSession.receiversName);
+  const setProfilePictureSrcState = useState<any>(currentSession.profilePicture)
   const [messages, setMessages] = useState<Message[]>(currentSession.messages);
+
   const messagesSim = useRef<Message[]>([]);
 
   // Message typed by the user
   const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
-  const setProfilePictureSrcState = useState<string>(currentSession.profilePicture)
 
   const isTyping = useRef<boolean>(false);
 
@@ -91,7 +101,6 @@ export const MainComponent: React.FC<{
   const FPS = 30;
 
   const endOfMessagesRef = useRef(null);
-  const [receiverName, setReceiverName] = useState(currentSession.receiversName);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [simulateMessageOn, setSimulateMessageOn] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
@@ -108,9 +117,6 @@ export const MainComponent: React.FC<{
   const chatRef = useRef(null);
   const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
   const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
-  const [showPercentageChecked, setShowPercentageChecked] = useState(currentSession.showBatteryPercentage)
-  const [showHeaderChecked, setShowHeaderChecked] = useState(currentSession.showHeader)
-  const [network, setNetwork] = useState<string>(currentSession.network)
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
 
@@ -122,10 +128,25 @@ export const MainComponent: React.FC<{
 
   const videoFrames = useRef<VideoFrame[]>([]);
 
-  const [time, setTime] = useState<string>(currentSession.phoneTime)
   const [messageTime, setMessageTime] = useState<string>('15:11')
   const [activeTab, setActiveTab] = useState('person1'); // default tab to the first person
   const canvas = document.createElement('canvas');
+
+  // load sessionStorage
+  useEffect(() => {
+    retrieveSessionState().then(sessionFromIndexedDB => {
+      if (!sessionFromIndexedDB) return
+      setTime(sessionFromIndexedDB.phoneTime)
+      setShowPercentageChecked(sessionFromIndexedDB.showBatteryPercentage)
+      setShowHeaderChecked(sessionFromIndexedDB.showHeader)
+      setNetwork(sessionFromIndexedDB.network)
+      setReceiverName(sessionFromIndexedDB.receiversName)
+      setProfilePictureSrcState[1](sessionFromIndexedDB.profilePicture)
+      setMessages(sessionFromIndexedDB.messages)
+    })
+    // Empty dependency array means this effect runs once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTabSelect = (key: any) => {
     setActiveTab(key);
@@ -139,7 +160,7 @@ export const MainComponent: React.FC<{
 
   // Save session
   useEffect(() => {
-    saveSession({
+    const session = {
       messages: messages,
       network: network,
       phoneTime: time,
@@ -147,6 +168,11 @@ export const MainComponent: React.FC<{
       showBatteryPercentage: showPercentageChecked,
       showHeader: showHeaderChecked,
       profilePicture: setProfilePictureSrcState[0]
+    } as SessionState
+
+    // saveSession(session)
+    toStorableSessionState(session).then(storableSession => {
+      storeSessionState(storableSession)
     })
   }, [messages, network, receiverName, setProfilePictureSrcState, showHeaderChecked, showPercentageChecked, time]);
 
