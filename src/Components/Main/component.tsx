@@ -83,7 +83,7 @@ export const MainComponent: React.FC<{
   const [showHeaderChecked, setShowHeaderChecked] = useState(currentSession.showHeader)
   const [network, setNetwork] = useState<string>(currentSession.network)
   const [receiverName, setReceiverName] = useState(currentSession.receiversName);
-  const setProfilePictureSrcState = useState<any>(currentSession.profilePicture)
+  const [profilePicture, setProfilePicture] = useState<any>(currentSession.profilePicture)
   const [messages, setMessages] = useState<Message[]>(currentSession.messages);
 
   const messagesSim = useRef<Message[]>([]);
@@ -141,7 +141,7 @@ export const MainComponent: React.FC<{
       setShowHeaderChecked(sessionFromIndexedDB.showHeader)
       setNetwork(sessionFromIndexedDB.network)
       setReceiverName(sessionFromIndexedDB.receiversName)
-      setProfilePictureSrcState[1](sessionFromIndexedDB.profilePicture)
+      setProfilePicture(sessionFromIndexedDB.profilePicture)
       setMessages(sessionFromIndexedDB.messages)
     })
     // Empty dependency array means this effect runs once on mount
@@ -167,14 +167,14 @@ export const MainComponent: React.FC<{
       receiversName: receiverName,
       showBatteryPercentage: showPercentageChecked,
       showHeader: showHeaderChecked,
-      profilePicture: setProfilePictureSrcState[0]
+      profilePicture: profilePicture
     } as SessionState
 
     // saveSession(session)
     toStorableSessionState(session).then(storableSession => {
       storeSessionState(storableSession)
     })
-  }, [messages, network, receiverName, setProfilePictureSrcState, showHeaderChecked, showPercentageChecked, time]);
+  }, [messages, network, receiverName, profilePicture, showHeaderChecked, showPercentageChecked, time]);
 
   const handleMessageStatusChange = (event: any) => {
     setSelectedMessageStatus(event.target.id);
@@ -758,7 +758,7 @@ export const MainComponent: React.FC<{
         <div className={"container-fluid main-page"}>
           <div className="row">
             <PhotoProfilModale pdpState={pdpState}
-                               setProfilePictureSrcState={setProfilePictureSrcState}/>
+                               setProfilePictureSrcState={[profilePicture, setProfilePicture]}/>
             <div className="col mb-5">
               <div className={"left-container"}>
                 <div className={"form-floating"}>
@@ -1039,7 +1039,7 @@ export const MainComponent: React.FC<{
                   <span className={"whatsapp-actions center-icon"}>
                   <FontAwesomeIcon icon={faArrowLeft}/>
                   </span>
-                      <img className="profile-pic" src={setProfilePictureSrcState[0]}
+                      <img className="profile-pic" src={profilePicture}
                            alt="alt-profile" crossOrigin="anonymous"
                            onClick={() => pdpState[1](true)}/>
                       <div className="name-and-status">

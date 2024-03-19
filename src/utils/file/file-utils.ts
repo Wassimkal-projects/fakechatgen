@@ -1,5 +1,6 @@
 export const getObjectFromURLFileData = async (objectURL: string | null) => {
   if (!objectURL) return null;
+  console.log("objectURL", objectURL)
   try {
     const response = await fetch(objectURL);
     return await response.blob();
