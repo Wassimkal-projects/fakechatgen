@@ -30,7 +30,7 @@ import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 import useAuthState from "../../hooks/auth-state-hook";
-import {loadSession} from "../../utils/localStorage/local-storage";
+import {defaultSession, loadSession} from "../../utils/localStorage/local-storage";
 import {
   retrieveSessionState,
   SessionState,
@@ -77,6 +77,7 @@ export const MainComponent: React.FC<{
   const [input, setInput] = useState('')
 
   const currentSession = loadSession()
+  // const [currentSession, setCurrentSession] = useState()
 
   const [time, setTime] = useState<string>(currentSession.phoneTime)
   const [showPercentageChecked, setShowPercentageChecked] = useState(currentSession.showBatteryPercentage)
@@ -170,6 +171,7 @@ export const MainComponent: React.FC<{
       profilePicture: profilePicture
     } as SessionState
 
+    if (session === defaultSession) return
     // saveSession(session)
     toStorableSessionState(session).then(storableSession => {
       storeSessionState(storableSession)

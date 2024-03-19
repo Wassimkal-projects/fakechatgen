@@ -10,7 +10,7 @@ interface SessionState {
   messages: Message[]
 }
 
-const defaultSession: SessionState = {
+export const defaultSession: SessionState = {
   receiversName: 'John Doe',
   messages: [],
   showHeader: true,
