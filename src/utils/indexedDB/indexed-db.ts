@@ -73,6 +73,16 @@ export const storeSessionState = (sessionState: StorableSessionState): void => {
 
 }
 
+export const defaultSession: SessionState = {
+  receiversName: 'John Doe',
+  messages: [],
+  showHeader: true,
+  showBatteryPercentage: true,
+  phoneTime: '15:08',
+  network: '5G',
+  profilePicture: require("../../img/avatar.png")
+}
+
 export const retrieveSessionState = (): Promise<SessionState | null> => {
   return new Promise((resolve, reject) => {
     initDB().then(db => {
@@ -90,7 +100,7 @@ export const retrieveSessionState = (): Promise<SessionState | null> => {
         } else {
           console.log("No SessionState found with the '1'",);
           // Resolve with undefined if no sessionState is found
-          resolve(null);
+          resolve(defaultSession);
         }
       };
     })

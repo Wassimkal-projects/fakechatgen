@@ -30,7 +30,7 @@ import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 import useAuthState from "../../hooks/auth-state-hook";
-import {defaultSession, loadSession} from "../../utils/localStorage/local-storage";
+import {defaultSession} from "../../utils/localStorage/local-storage";
 import {
   retrieveSessionState,
   SessionState,
@@ -76,16 +76,16 @@ export const MainComponent: React.FC<{
   const inputRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState('')
 
-  const currentSession = loadSession()
+  // const currentSession = loadSession()
   // const [currentSession, setCurrentSession] = useState()
 
-  const [time, setTime] = useState<string>(currentSession.phoneTime)
-  const [showPercentageChecked, setShowPercentageChecked] = useState(currentSession.showBatteryPercentage)
-  const [showHeaderChecked, setShowHeaderChecked] = useState(currentSession.showHeader)
-  const [network, setNetwork] = useState<string>(currentSession.network)
-  const [receiverName, setReceiverName] = useState(currentSession.receiversName);
-  const [profilePicture, setProfilePicture] = useState<any>(currentSession.profilePicture)
-  const [messages, setMessages] = useState<Message[]>(currentSession.messages);
+  const [time, setTime] = useState<string>('')
+  const [showPercentageChecked, setShowPercentageChecked] = useState(true)
+  const [showHeaderChecked, setShowHeaderChecked] = useState(true)
+  const [network, setNetwork] = useState<string>('5G')
+  const [receiverName, setReceiverName] = useState('');
+  const [profilePicture, setProfilePicture] = useState<any>('')
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const messagesSim = useRef<Message[]>([]);
 
@@ -133,7 +133,7 @@ export const MainComponent: React.FC<{
   const [activeTab, setActiveTab] = useState('person1'); // default tab to the first person
   const canvas = document.createElement('canvas');
 
-  // load sessionStorage
+  // Load sessionStorage
   useEffect(() => {
     retrieveSessionState().then(sessionFromIndexedDB => {
       if (!sessionFromIndexedDB) return
