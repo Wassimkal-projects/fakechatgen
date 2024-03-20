@@ -1,6 +1,7 @@
-import {SessionState, StorableSessionState} from "../utils/indexedDB/indexed-db";
+import {SessionState} from "../utils/indexedDB/indexed-db";
 import {Message, StorableMessage} from "../utils/types/types";
 
+/*
 const toStorableMessages = async (messages: Message[]): Promise<StorableMessage[]> => {
   const promises = messages.map(async (message) => {
     // Check if imageMessage exists before trying to fetch the object
@@ -42,4 +43,4 @@ export const toSessionState = (storableSession: StorableSessionState): SessionSt
     profilePicture: storableSession.profilePicture,
     messages: toMessages(storableSession.messages)
   } as SessionState
-}
+}*/

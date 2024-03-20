@@ -1,5 +1,4 @@
-import {Message, StorableMessage} from "../types/types";
-import {toSessionState} from "../../mappers/session-state-mapper";
+import {Message} from "../types/types";
 
 let db: IDBDatabase;
 
@@ -12,17 +11,6 @@ export interface SessionState {
   network: string;
   phoneTime: string;
   messages: Message[]
-}
-
-export interface StorableSessionState {
-  id: string
-  receiversName: string;
-  profilePicture: Blob | null;
-  showHeader: boolean;
-  showBatteryPercentage: boolean;
-  network: string;
-  phoneTime: string;
-  messages: StorableMessage[]
 }
 
 const initDB = (): Promise<IDBDatabase> => {
@@ -56,7 +44,7 @@ const initDB = (): Promise<IDBDatabase> => {
   });
 }
 
-export const storeSessionState = (sessionState: StorableSessionState): void => {
+export const storeSessionState = (sessionState: SessionState): void => {
   initDB().then(db => {
     const transaction = db.transaction("sessions", "readwrite");
     const objectStore = transaction.objectStore("sessions");
@@ -93,12 +81,11 @@ export const retrieveSessionState = (): Promise<SessionState> => {
       const request = objectStore.get("session-id");
 
       request.onsuccess = (event: Event) => {
-        const sessionState: StorableSessionState | undefined = (event.target as IDBRequest).result;
+        const sessionState: SessionState | undefined = (event.target as IDBRequest).result;
         if (sessionState) {
           console.log("SessionState retrieved successfully:", sessionState);
           // Here, you resolve the promise with the sessionState object
-          console.log(toSessionState(sessionState))
-          resolve(toSessionState(sessionState));
+          resolve(sessionState);
         } else {
           console.log("No SessionState found with the id 'session-id'",);
           // Resolve with undefined if no sessionState is found

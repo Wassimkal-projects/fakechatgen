@@ -35,7 +35,6 @@ import {
   SessionState,
   storeSessionState
 } from "../../utils/indexedDB/indexed-db";
-import {toStorableSessionState} from "../../mappers/session-state-mapper";
 
 const ffmpeg = new FFmpeg()
 
@@ -167,6 +166,7 @@ export const MainComponent: React.FC<{
     if (!startStoringChanges.current) return
 
     const session = {
+      id: "session-id",
       messages: messages,
       network: network,
       phoneTime: time,
@@ -177,9 +177,7 @@ export const MainComponent: React.FC<{
     } as SessionState
 
     // saveSession(session)
-    toStorableSessionState(session).then(storableSession => {
-      storeSessionState(storableSession)
-    })
+    storeSessionState(session)
   }, [messages, network, receiverName, profilePicture, showHeaderChecked, showPercentageChecked, time]);
 
   const handleMessageStatusChange = (event: any) => {
