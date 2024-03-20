@@ -17,8 +17,20 @@ export const defaultSession: SessionState = {
   showBatteryPercentage: true,
   phoneTime: '15:08',
   network: '5G',
-  profilePicture: require("../../img/avatar.png")
+  profilePicture: "../../img/avatar.png"
 }
+
+
+export const emptySession: SessionState = {
+  receiversName: '',
+  messages: [],
+  showHeader: true,
+  showBatteryPercentage: true,
+  phoneTime: '',
+  network: '5G',
+  profilePicture: ''
+} as SessionState
+
 export const saveSession = (sessionState: SessionState) => {
   localStorage.setItem('sessionState', JSON.stringify(sessionState))
 }

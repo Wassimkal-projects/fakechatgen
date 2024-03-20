@@ -4,6 +4,7 @@ import {toSessionState} from "../../mappers/session-state-mapper";
 let db: IDBDatabase;
 
 export interface SessionState {
+  id: string;
   receiversName: string;
   profilePicture: string;
   showHeader: boolean;
@@ -63,7 +64,7 @@ export const storeSessionState = (sessionState: StorableSessionState): void => {
     const request = objectStore.put(sessionState);
 
     request.onsuccess = () => {
-      console.log("SessionState stored successfully");
+      console.log("SessionState stored successfully", sessionState);
     };
 
     request.onerror = (event: Event) => {
@@ -74,6 +75,7 @@ export const storeSessionState = (sessionState: StorableSessionState): void => {
 }
 
 export const defaultSession: SessionState = {
+  id: "default-session",
   receiversName: 'John Doe',
   messages: [],
   showHeader: true,
@@ -98,7 +100,7 @@ export const retrieveSessionState = (): Promise<SessionState | null> => {
           console.log(toSessionState(sessionState))
           resolve(toSessionState(sessionState));
         } else {
-          console.log("No SessionState found with the '1'",);
+          console.log("No SessionState found with the id 'session-id'",);
           // Resolve with undefined if no sessionState is found
           resolve(defaultSession);
         }

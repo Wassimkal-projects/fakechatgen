@@ -30,7 +30,6 @@ import {FFmpeg} from "@ffmpeg/ffmpeg"
 // @ts-ignore
 import {fetchFile} from "@ffmpeg/util";
 import useAuthState from "../../hooks/auth-state-hook";
-import {defaultSession} from "../../utils/localStorage/local-storage";
 import {
   retrieveSessionState,
   SessionState,
@@ -79,6 +78,7 @@ export const MainComponent: React.FC<{
   // const currentSession = loadSession()
   // const [currentSession, setCurrentSession] = useState()
 
+  const startStoringChanges = useRef<boolean>(false)
   const [time, setTime] = useState<string>('')
   const [showPercentageChecked, setShowPercentageChecked] = useState(true)
   const [showHeaderChecked, setShowHeaderChecked] = useState(true)
@@ -144,6 +144,7 @@ export const MainComponent: React.FC<{
       setReceiverName(sessionFromIndexedDB.receiversName)
       setProfilePicture(sessionFromIndexedDB.profilePicture)
       setMessages(sessionFromIndexedDB.messages)
+      startStoringChanges.current = true
     })
     // Empty dependency array means this effect runs once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,6 +162,9 @@ export const MainComponent: React.FC<{
 
   // Save session
   useEffect(() => {
+
+    if (!startStoringChanges.current) return
+
     const session = {
       messages: messages,
       network: network,
@@ -171,7 +175,6 @@ export const MainComponent: React.FC<{
       profilePicture: profilePicture
     } as SessionState
 
-    if (session === defaultSession) return
     // saveSession(session)
     toStorableSessionState(session).then(storableSession => {
       storeSessionState(storableSession)
