@@ -16,7 +16,7 @@ export interface Message {
 export interface StorableMessage {
   received: boolean;
   text?: string;
-  imageMessage?: Blob;
+  imageMessage?: string;
   status?: MessageStatus;
   displayTail: boolean;
   messageTime: string;

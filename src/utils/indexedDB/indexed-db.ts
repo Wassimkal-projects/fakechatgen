@@ -1,4 +1,5 @@
-import {Message} from "../types/types";
+import {Message, StorableMessage} from "../types/types";
+import {toSessionState, toStorableSessionState} from "../../mappers/session-state-mapper";
 
 let db: IDBDatabase;
 
@@ -11,6 +12,17 @@ export interface SessionState {
   network: string;
   phoneTime: string;
   messages: Message[]
+}
+
+export interface StorableSessionState {
+  id: string;
+  receiversName: string;
+  profilePicture: string | null;
+  showHeader: boolean;
+  showBatteryPercentage: boolean;
+  network: string;
+  phoneTime: string;
+  messages: StorableMessage[]
 }
 
 const initDB = (): Promise<IDBDatabase> => {
@@ -44,22 +56,25 @@ const initDB = (): Promise<IDBDatabase> => {
   });
 }
 
-export const storeSessionState = (sessionState: SessionState): void => {
+export const storeSessionState = (sessionState: SessionState) => {
   console.log("storeSessionState")
-  initDB().then(db => {
-    const transaction = db.transaction("sessions", "readwrite");
-    const objectStore = transaction.objectStore("sessions");
+  initDB().then(cdb => {
+    toStorableSessionState(sessionState).then(storableSessionState => {
+      const transaction = db.transaction("sessions", "readwrite");
+      const objectStore = transaction.objectStore("sessions");
 
-    console.log("request.put")
-    const request = objectStore.put(sessionState);
+      console.log("request.put", storableSessionState)
 
-    request.onsuccess = () => {
-      console.log("SessionState stored successfully", sessionState);
-    };
+      const request = objectStore.put(storableSessionState);
 
-    request.onerror = (event: Event) => {
-      console.error("Error storing SessionState: ", (event.target as IDBRequest).error?.message, sessionState);
-    };
+      request.onsuccess = () => {
+        console.log("SessionState stored successfully", sessionState);
+      };
+
+      request.onerror = (event: Event) => {
+        console.error("Error storing SessionState: ", (event.target as IDBRequest).error?.message, sessionState);
+      };
+    })
   })
 
 }
@@ -75,6 +90,7 @@ export const defaultSession: SessionState = {
   profilePicture: null
 }
 
+
 export const retrieveSessionState = (): Promise<SessionState> => {
   return new Promise((resolve, reject) => {
     initDB().then(db => {
@@ -83,11 +99,11 @@ export const retrieveSessionState = (): Promise<SessionState> => {
       const request = objectStore.get("session-id");
 
       request.onsuccess = (event: Event) => {
-        const sessionState: SessionState | undefined = (event.target as IDBRequest).result;
+        const sessionState: StorableSessionState | undefined = (event.target as IDBRequest).result;
         if (sessionState) {
           console.log("SessionState retrieved successfully:", sessionState);
           // Here, you resolve the promise with the sessionState object
-          resolve(sessionState);
+          resolve(toSessionState(sessionState));
         } else {
           console.log("No SessionState found with the id 'session-id'",);
           // Resolve with undefined if no sessionState is found
