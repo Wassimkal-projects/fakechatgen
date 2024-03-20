@@ -162,7 +162,7 @@ export const MainComponent: React.FC<{
   // Save session
   useEffect(() => {
 
-    console.log(startStoringChanges.current)
+    console.log("startStoringChanges", startStoringChanges.current)
     if (!startStoringChanges.current) return
 
     const session = {

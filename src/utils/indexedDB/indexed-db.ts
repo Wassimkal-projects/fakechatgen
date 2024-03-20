@@ -45,10 +45,12 @@ const initDB = (): Promise<IDBDatabase> => {
 }
 
 export const storeSessionState = (sessionState: SessionState): void => {
+  console.log("storeSessionState")
   initDB().then(db => {
     const transaction = db.transaction("sessions", "readwrite");
     const objectStore = transaction.objectStore("sessions");
 
+    console.log("request.put")
     const request = objectStore.put(sessionState);
 
     request.onsuccess = () => {
