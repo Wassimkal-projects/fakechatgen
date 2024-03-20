@@ -6,7 +6,7 @@ let db: IDBDatabase;
 export interface SessionState {
   id: string;
   receiversName: string;
-  profilePicture: string;
+  profilePicture: Blob | null;
   showHeader: boolean;
   showBatteryPercentage: boolean;
   network: string;
@@ -75,17 +75,17 @@ export const storeSessionState = (sessionState: StorableSessionState): void => {
 }
 
 export const defaultSession: SessionState = {
-  id: "default-session",
+  id: "session-id",
   receiversName: 'John Doe',
   messages: [],
   showHeader: true,
   showBatteryPercentage: true,
   phoneTime: '15:08',
   network: '5G',
-  profilePicture: require("../../img/avatar.png")
+  profilePicture: null
 }
 
-export const retrieveSessionState = (): Promise<SessionState | null> => {
+export const retrieveSessionState = (): Promise<SessionState> => {
   return new Promise((resolve, reject) => {
     initDB().then(db => {
       const transaction = db.transaction("sessions");

@@ -59,7 +59,7 @@ export const UpdateMessage: React.FC<{
     if (file && file.type.substr(0, 5) === 'image') {
       setCurrentMessage({
         ...currentMessage,
-        imageMessage: URL.createObjectURL(file)
+        imageMessage: file
       })
     }
   };
@@ -108,7 +108,7 @@ export const UpdateMessage: React.FC<{
                 <div className="form-floating">
                   {currentMessage.imageMessage &&
                       <div className={"image-preview"}>
-                        <img src={currentMessage.imageMessage} alt="Preview"
+                        <img src={URL.createObjectURL(currentMessage.imageMessage)} alt="Preview"
                              style={{maxWidth: '250px'}}/>
                       </div>}
                   <textarea value={currentMessage.text}
@@ -216,7 +216,7 @@ export const UpdateMessage: React.FC<{
                 <div className="form-floating">
                   {currentMessage.imageMessage &&
                       <div className={"image-preview"}>
-                        <img src={currentMessage.imageMessage} alt="Preview"
+                        <img src={URL.createObjectURL(currentMessage.imageMessage)} alt="Preview"
                              style={{maxWidth: '250px'}}/>
                       </div>}
                   <textarea value={currentMessage.text}

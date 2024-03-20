@@ -79,12 +79,13 @@ export const MainComponent: React.FC<{
   // const [currentSession, setCurrentSession] = useState()
 
   const startStoringChanges = useRef<boolean>(false)
+  // const defaultProfileImage = require("../../img/avatar.png")
   const [time, setTime] = useState<string>('')
   const [showPercentageChecked, setShowPercentageChecked] = useState(true)
   const [showHeaderChecked, setShowHeaderChecked] = useState(true)
   const [network, setNetwork] = useState<string>('5G')
   const [receiverName, setReceiverName] = useState('');
-  const [profilePicture, setProfilePicture] = useState<any>('')
+  const [profilePicture, setProfilePicture] = useState<Blob | null>(null)
   const [messages, setMessages] = useState<Message[]>([]);
 
   const messagesSim = useRef<Message[]>([]);
@@ -116,7 +117,7 @@ export const MainComponent: React.FC<{
   //** Typing props to see ** //
 
   const chatRef = useRef(null);
-  const [imageMessage, setImageMessage] = useState<string | undefined>(undefined)
+  const [imageMessage, setImageMessage] = useState<Blob | undefined>(undefined)
   const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
   const [date, setDate] = useState<string>('None')
   const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
@@ -136,7 +137,6 @@ export const MainComponent: React.FC<{
   // Load sessionStorage
   useEffect(() => {
     retrieveSessionState().then(sessionFromIndexedDB => {
-      if (!sessionFromIndexedDB) return
       setTime(sessionFromIndexedDB.phoneTime)
       setShowPercentageChecked(sessionFromIndexedDB.showBatteryPercentage)
       setShowHeaderChecked(sessionFromIndexedDB.showHeader)
@@ -163,6 +163,7 @@ export const MainComponent: React.FC<{
   // Save session
   useEffect(() => {
 
+    console.log(startStoringChanges.current)
     if (!startStoringChanges.current) return
 
     const session = {
@@ -750,7 +751,7 @@ export const MainComponent: React.FC<{
   const handleImageChange = (e: any) => {
     const file = e.target.files[0];
     if (file && file.type.substr(0, 5) === 'image') {
-      setImageMessage(URL.createObjectURL(file))
+      setImageMessage(file)
     }
   };
 
@@ -836,7 +837,8 @@ export const MainComponent: React.FC<{
                       <div className="form-floating">
                         {imageMessage &&
                             <div className={"image-preview"}>
-                              <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>
+                              <img src={URL.createObjectURL(imageMessage)} alt="Preview"
+                                   style={{maxWidth: '250px'}}/>
                             </div>}
                         <textarea value={inputMessage}
                                   id="person1Textarea"
@@ -924,7 +926,8 @@ export const MainComponent: React.FC<{
                       <div className="form-floating">
                         {imageMessage &&
                             <div className={"image-preview"}>
-                              <img src={imageMessage} alt="Preview" style={{maxWidth: '250px'}}/>
+                              <img src={URL.createObjectURL(imageMessage)} alt="Preview"
+                                   style={{maxWidth: '250px'}}/>
                             </div>}
                         <textarea value={inputMessage}
                                   id="person2Textarea"
@@ -1044,7 +1047,8 @@ export const MainComponent: React.FC<{
                   <span className={"whatsapp-actions center-icon"}>
                   <FontAwesomeIcon icon={faArrowLeft}/>
                   </span>
-                      <img className="profile-pic" src={profilePicture}
+                      <img className="profile-pic"
+                           src={profilePicture !== null ? URL.createObjectURL(profilePicture) : require("../../img/avatar.png")}
                            alt="alt-profile" crossOrigin="anonymous"
                            onClick={() => pdpState[1](true)}/>
                       <div className="name-and-status">

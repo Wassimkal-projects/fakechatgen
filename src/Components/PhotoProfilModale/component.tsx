@@ -4,17 +4,20 @@ import AvatarImageCropper from 'react-avatar-image-cropper';
 import {Button, Modal, ModalBody, ModalFooter, ModalHeader} from "react-bootstrap";
 import {ReactState} from "../../utils/types/types";
 
-export const PhotoProfilModale: React.FC<{ pdpState: ReactState<boolean>, setProfilePictureSrcState: ReactState<string> }> = ({
-                                                                                                                                pdpState,
-                                                                                                                                setProfilePictureSrcState
-                                                                                                                              }) => {
+export const PhotoProfilModale: React.FC<{
+  pdpState: ReactState<boolean>,
+  setProfilePictureSrcState: ReactState<Blob | null>
+}> = ({
+        pdpState,
+        setProfilePictureSrcState
+      }) => {
 
 
   const [pdpOpen, setPdpOpen] = pdpState;
 
   const apply = (file: any) => {
-    let src = window.URL.createObjectURL(file);
-    setProfilePictureSrcState[1](src)
+    // let src = window.URL.createObjectURL(file);
+    setProfilePictureSrcState[1](file)
     setPdpOpen(false)
   };
 

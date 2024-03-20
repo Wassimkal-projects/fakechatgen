@@ -108,7 +108,8 @@ export const MessageComponent: React.FC<{
               {currentMessage.imageMessage && (
                   <>
                     {currentMessage.text && <br/>}
-                    <img className={"image-message"} src={currentMessage.imageMessage}
+                    <img className={"image-message"}
+                         src={URL.createObjectURL(currentMessage.imageMessage)}
                          alt="New message"
                          crossOrigin="anonymous"/>
                   </>
