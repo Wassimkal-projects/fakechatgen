@@ -138,12 +138,14 @@
   border-radius: 20px;
 }
 
+.phone-header {
+  background-color: #00a884;
+}
 
 .phone-top-bar {
   display: flex;
   justify-content: space-between;
   padding: 4px 10px;
-  background-color: #00a884;
   color: white;
   font-size: 14px;
 }
@@ -155,12 +157,7 @@
 }
 
 .whatsapp-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #00a884;
-  color: white;
-  padding: 10px;
+
 }
 
 .profile-pic {
@@ -392,6 +389,19 @@
 textarea {
   width: 300px;
   height: 150px;
+}
+
+.ad-container {
+  display: flex;
+  justify-content: flex-end;
+  color: #000;
+  height: 10px;
+  flex-direction: column;
+  align-items: center;
+
+  & span {
+    font-size: x-small;
+  }
 }
 
 /**/

@@ -26,5 +26,16 @@ export const ChatContainer = styled.div<{
       flex-direction: column;
       background-image: url(${backgroundImg});`
 }
+`
 
+export const ChatHeader = styled.div<{
+  $showheader: boolean
+}>`${props =>
+    css`
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      padding: ${props.$showheader ? '10px' : '10px 10px 0 10px'};
+    `}
 `

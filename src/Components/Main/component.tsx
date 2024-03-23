@@ -37,7 +37,7 @@ import {
   SessionState,
   storeSessionState
 } from "../../utils/indexedDB/indexed-db";
-import {ChatContainer} from "./styles";
+import {ChatContainer, ChatHeader} from "./styles";
 
 const ffmpeg = new FFmpeg()
 
@@ -1046,11 +1046,13 @@ export const MainComponent: React.FC<{
                       className="col btn btn-info"
                       onClick={startRecording}>
 
-                    {downloadingVideo &&
-                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                              aria-hidden="true"/>}
                     Get video
-                    <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
+                    {
+                      downloadingVideo ?
+                          <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                                aria-hidden="true"/> :
+                          <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
+                    }
                   </button>
                 </div>
               </div>
@@ -1060,37 +1062,46 @@ export const MainComponent: React.FC<{
                 <ChatContainer ref={chatRef}
                                $videoformat={videoFormat}
                                $blur={downloadingVideo || encodingOnProgress}>
-                  {showHeaderChecked && <div className="phone-top-bar">
-                    <span className="time">{time} am</span>
-                    <span className="network-status">
+                  <div className={"phone-header"}>
+                    {showHeaderChecked && <div className="phone-top-bar">
+                      <span className="time">{time} am</span>
+                      <div className={"ad-container"}>
+                        <span>chat-visio.com</span>
+                      </div>
+                      <span className="network-status">
                   <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
-                      {showPercentageChecked && <span>50%</span>}
-                      <FontAwesomeIcon icon={faBatteryHalf}/>
+                        {showPercentageChecked && <span>50%</span>}
+                        <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
-
-                  </div>}
-                  <div className="whatsapp-header">
-                    <div className="pic-and-name">
-                  <span className={"whatsapp-actions center-icon"}>
-                  <FontAwesomeIcon icon={faArrowLeft}/>
-                  </span>
-                      <img className="profile-pic"
-                           src={profilePicture !== null ? URL.createObjectURL(profilePicture) : require("../../img/avatar.png")}
-                           alt="alt-profile" crossOrigin="anonymous"
-                           onClick={() => pdpState[1](true)}/>
-                      <div className="name-and-status">
-                        <span className={"name-text"}>{receiverName}</span>
-                        <span className={"status-text"}>{receiverStatus}</span>
+                    </div>}
+                    <ChatHeader className="whatsapp-header" $showheader={showHeaderChecked}>
+                      <div className="pic-and-name">
+                        <span className={"whatsapp-actions center-icon"}>
+                        <FontAwesomeIcon icon={faArrowLeft}/>
+                        </span>
+                        <img className="profile-pic"
+                             src={profilePicture !== null ? URL.createObjectURL(profilePicture) : require("../../img/avatar.png")}
+                             alt="alt-profile" crossOrigin="anonymous"
+                             onClick={() => pdpState[1](true)}/>
+                        <div className="name-and-status">
+                          <span className={"name-text"}>{receiverName}</span>
+                          <span className={"status-text"}>{receiverStatus}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="whatsapp-actions">
+                      <div className="whatsapp-actions">
                     <span><FontAwesomeIcon
                         icon={faVideoCamera}/></span>
-                      <span><FontAwesomeIcon icon={faPhone}/></span>
-                      <span><FontAwesomeIcon icon={faEllipsisV}/></span>
+                        <span><FontAwesomeIcon icon={faPhone}/></span>
+                        <span><FontAwesomeIcon icon={faEllipsisV}/></span>
+                      </div>
+                    </ChatHeader>
+                    {!showHeaderChecked && <div className={"ad-container"}>
+                      <span>chat-visio.com</span>
                     </div>
+                    }
                   </div>
+
                   <div className="chat-messages chat-messages-container" id="chatMessages">
                     {
                       messages.slice().reverse().map((message, index) => {
@@ -1160,6 +1171,7 @@ export const MainComponent: React.FC<{
                   <button className="btn btn-primary" onClick={() => downloadImage()}
                           disabled={simulateMessageOn}>Download as
                     Image
+                    <FontAwesomeIcon className={"ms-2"} icon={faImage}/>
                   </button>
 
                   <button
@@ -1167,10 +1179,13 @@ export const MainComponent: React.FC<{
                       className="btn btn-info"
                       onClick={startRecording}>
 
-                    {downloadingVideo &&
-                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                              aria-hidden="true"/>}
                     Get video
+                    {
+                      downloadingVideo ?
+                          <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                                aria-hidden="true"/> :
+                          <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
+                    }
                   </button>
                 </div>
               </div>
