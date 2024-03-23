@@ -57,22 +57,26 @@ const toBase64 = (blob: Blob): Promise<string> => {
   });
 }
 
-const base64ToBlob = (base64: string, contentType: string = 'image/jpeg', sliceSize: number = 512): Blob => {
-  const byteCharacters = atob(base64); // Decode base64 string
-  const byteArrays: Uint8Array[] = [];
+const base64ToBlob = (base64: string, contentType: string = 'image/jpeg', sliceSize: number = 512): Blob | null => {
+  try {
+    const byteCharacters = atob(base64); // Decode base64 string
+    const byteArrays: Uint8Array[] = [];
 
-  for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-    const slice = byteCharacters.slice(offset, offset + sliceSize);
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize);
 
-    const byteNumbers = new Array(slice.length);
-    for (let i = 0; i < slice.length; i++) {
-      byteNumbers[i] = slice.charCodeAt(i);
+      const byteNumbers = new Array(slice.length);
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      byteArrays.push(byteArray);
     }
 
-    const byteArray = new Uint8Array(byteNumbers);
-    byteArrays.push(byteArray);
+    const blob = new Blob(byteArrays, {type: contentType}); // Create blob
+    return blob;
+  } catch (error) {
+    return null
   }
-
-  const blob = new Blob(byteArrays, {type: contentType}); // Create blob
-  return blob;
 }

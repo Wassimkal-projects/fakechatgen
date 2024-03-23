@@ -381,6 +381,19 @@
   z-index: 999; /* Ensure the spinner is on top of other content */
 }
 
+.box-shadow {
+  box-shadow: 0 0 2px #ababab;
+}
+
+.box-shadow-right {
+  box-shadow: inset 0 10px 10px 0 rgba(0, 0, 0, 0.15);
+}
+
+textarea {
+  width: 300px;
+  height: 150px;
+}
+
 /**/
 @media (max-width: 800px) {
   .main-page {

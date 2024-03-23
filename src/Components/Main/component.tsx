@@ -17,8 +17,10 @@ import {
   faImage,
   faPhone,
   faSignal,
-  faVideoCamera
+  faVideoCamera,
+  faPlay, faDownload, faSquarePlus, faRotateRight
 } from "@fortawesome/free-solid-svg-icons";
+
 import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
 import {SentIcon} from "../Svg/SentIcon/component";
 import {SendingIcon} from "../Svg/SendingIcon/component";
@@ -35,6 +37,7 @@ import {
   SessionState,
   storeSessionState
 } from "../../utils/indexedDB/indexed-db";
+import {ChatContainer} from "./styles";
 
 const ffmpeg = new FFmpeg()
 
@@ -78,7 +81,8 @@ export const MainComponent: React.FC<{
   // const [currentSession, setCurrentSession] = useState()
 
   const startStoringChanges = useRef<boolean>(false)
-  // const defaultProfileImage = require("../../img/avatar.png")
+
+  const [videoFormat, setVideoFormat] = useState<string>('VERTICAL')
   const [time, setTime] = useState<string>('')
   const [showPercentageChecked, setShowPercentageChecked] = useState(true)
   const [showHeaderChecked, setShowHeaderChecked] = useState(true)
@@ -165,6 +169,8 @@ export const MainComponent: React.FC<{
     console.log("startStoringChanges", startStoringChanges.current)
     if (!startStoringChanges.current) return
 
+    if (downloadingVideo || simulateMessageOn) return
+
     const session = {
       id: "session-id",
       messages: messages,
@@ -178,7 +184,7 @@ export const MainComponent: React.FC<{
 
     // saveSession(session)
     storeSessionState(session)
-  }, [messages, network, receiverName, profilePicture, showHeaderChecked, showPercentageChecked, time]);
+  }, [messages, network, receiverName, profilePicture, showHeaderChecked, showPercentageChecked, time, downloadingVideo, simulateMessageOn]);
 
   const handleMessageStatusChange = (event: any) => {
     setSelectedMessageStatus(event.target.id);
@@ -763,8 +769,8 @@ export const MainComponent: React.FC<{
           <div className="row">
             <PhotoProfilModale pdpState={pdpState}
                                setProfilePictureSrcState={[profilePicture, setProfilePicture]}/>
-            <div className="col mb-5">
-              <div className={"left-container"}>
+            <div className="col-md-5 mb-md-5">
+              <div className={"left-container box-shadow p-2"}>
                 <div className={"form-floating"}>
                   <input type="text"
                          className="form-control"
@@ -819,6 +825,25 @@ export const MainComponent: React.FC<{
                   <label htmlFor="timeFormControl">
                     Time
                   </label>
+                </div>
+
+                <div>
+                  <label htmlFor="videoFormat" className={"m-2"}>Video format</label>
+                  <div id="videoFormat" className="form-check form-check-inline">
+                    <input className="form-check-input" type="radio" name="inlineRadioOptions"
+                           id="verticalAspectRatio" value="VERTICAL"
+                           checked={videoFormat === "VERTICAL"}
+                           onChange={event => setVideoFormat(event.target.value)}/>
+                    <label className="form-check-label"
+                           htmlFor="verticalAspectRatio">Vertical</label>
+                  </div>
+                  <div className="form-check form-check-inline">
+                    <input className="form-check-input" type="radio" name="inlineRadioOptions"
+                           id="squareAspectRatio" value="SQUARE"
+                           checked={videoFormat === "SQUARE"}
+                           onChange={event => setVideoFormat(event.target.value)}/>
+                    <label className="form-check-label" htmlFor="squareAspectRatio">Square</label>
+                  </div>
                 </div>
                 <Tab.Container id="left-tabs-example" activeKey={activeTab}
                                onSelect={handleTabSelect}>
@@ -1000,18 +1025,21 @@ export const MainComponent: React.FC<{
                               })
                               setImageMessage(undefined)
                             }}>Add to conversation
+                      <FontAwesomeIcon className={"ms-2"} icon={faSquarePlus}/>
                     </button>
                   </div>
                 </div>
                 <div className={"row px-3 gap-2"}>
                   <button disabled={simulateMessageOn} className="col btn btn-danger"
-                          onClick={() => clearConversation()}>Clear
+                          onClick={() => clearConversation()}>Reset
+                    <FontAwesomeIcon className={"ms-2"} icon={faRotateRight}/>
                   </button>
-                  <button disabled={simulateMessageOn} className="col btn btn-primary"
+                  <button disabled={simulateMessageOn} className="col btn btn-outline-primary"
                           onClick={() => {
                             simulateAllChat()
                           }
                           }>Play
+                    <FontAwesomeIcon className={"ms-2"} icon={faPlay}></FontAwesomeIcon>
                   </button>
                   <button
                       disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
@@ -1022,14 +1050,16 @@ export const MainComponent: React.FC<{
                         <span className="spinner-grow spinner-grow-sm mx-2" role="status"
                               aria-hidden="true"/>}
                     Get video
+                    <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
                   </button>
                 </div>
               </div>
             </div>
-            <div className="col">
-              <div className={"chat-blurry-container"}>
-                <div ref={chatRef}
-                     className={`chat-container ${(downloadingVideo || encodingOnProgress) ? 'blur' : ''}`}>
+            <div className="col-md-7">
+              <div className={"chat-blurry-container box-shadow-right p-2"}>
+                <ChatContainer ref={chatRef}
+                               $videoformat={videoFormat}
+                               $blur={downloadingVideo || encodingOnProgress}>
                   {showHeaderChecked && <div className="phone-top-bar">
                     <span className="time">{time} am</span>
                     <span className="network-status">
@@ -1105,7 +1135,7 @@ export const MainComponent: React.FC<{
                   </div>
                   </span>
                   </div>}
-                </div>
+                </ChatContainer>
                 {downloadingVideo && (
                     <div className="spinner-container">
                       <div className="d-flex flex-column align-items-center">
@@ -1126,22 +1156,23 @@ export const MainComponent: React.FC<{
                       </div>
                     </div>
                 )}
-              </div>
-              <div className={"generate-buttons"}>
-                <button className="btn btn-primary" onClick={() => downloadImage()}
-                        disabled={simulateMessageOn}>Download as
-                  Image
-                </button>
+                <div className={"generate-buttons"}>
+                  <button className="btn btn-primary" onClick={() => downloadImage()}
+                          disabled={simulateMessageOn}>Download as
+                    Image
+                  </button>
 
-                <button disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
-                        className="btn btn-info"
-                        onClick={startRecording}>
+                  <button
+                      disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
+                      className="btn btn-info"
+                      onClick={startRecording}>
 
-                  {downloadingVideo &&
-                      <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                            aria-hidden="true"/>}
-                  Get video
-                </button>
+                    {downloadingVideo &&
+                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                              aria-hidden="true"/>}
+                    Get video
+                  </button>
+                </div>
               </div>
             </div>
           </div>
