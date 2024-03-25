@@ -2,9 +2,32 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #e5ddd5;
+  background-color: #f1f1f1;
 }
 
 .app-container {
-  padding: 95px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* This makes sure that the body is at least the height of the viewport */
+}
+
+.main-container {
+  margin: 0 auto; /* This centers the div */
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-color: #FFF;
+}
+
+
+@media (min-width: 992px) {
+  .main-container {
+    width: 70%;
+    min-width: 700px;
+    margin: 0 auto; /* This centers the div */
+    /* Additional styles for your content */
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: adds a subtle shadow for better visual separation */
+    background-color: #FFF;
+  }
 }

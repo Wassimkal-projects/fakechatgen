@@ -765,429 +765,427 @@ export const MainComponent: React.FC<{
 
   return (
       <>
-        <div className={"container-fluid main-page"}>
-          <div className="row">
-            <PhotoProfilModale pdpState={pdpState}
-                               setProfilePictureSrcState={[profilePicture, setProfilePicture]}/>
-            <div className="col-md-5 mb-md-5">
-              <div className={"left-container box-shadow p-2"}>
-                <div className={"form-floating"}>
-                  <input type="text"
-                         className="form-control"
-                         placeholder="Receiver's name"
-                         id="receiversNameFormControl"
-                         value={receiverName}
-                         onChange={(event) =>
-                             setReceiverName(event.target.value)
-                         }/>
-                  <label htmlFor="receiversNameFormControl">
-                    Receiver's name
-                  </label>
+        <div className="row">
+          <PhotoProfilModale pdpState={pdpState}
+                             setProfilePictureSrcState={[profilePicture, setProfilePicture]}/>
+          <div className="col-md-5 mb-md-5">
+            <div className={"left-container box-shadow p-2"}>
+              <div className={"form-floating"}>
+                <input type="text"
+                       className="form-control"
+                       placeholder="Receiver's name"
+                       id="receiversNameFormControl"
+                       value={receiverName}
+                       onChange={(event) =>
+                           setReceiverName(event.target.value)
+                       }/>
+                <label htmlFor="receiversNameFormControl">
+                  Receiver's name
+                </label>
+              </div>
+              <div className="form-check form-switch">
+                <input className="form-check-input" type="checkbox" id="flexShowHeaderSwitch"
+                       checked={showHeaderChecked}
+                       onChange={event => setShowHeaderChecked(event.target.checked)}/>
+                <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Show
+                  header</label>
+              </div>
+              <div className="form-check form-switch">
+                <input className="form-check-input" type="checkbox" id="flexShowPercentageSwitch"
+                       checked={showPercentageChecked}
+                       onChange={event => setShowPercentageChecked(event.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Show
+                  battery
+                  percentage</label>
+              </div>
+              <select
+                  id={"network-form"}
+                  className="form-select"
+                  aria-label="Default select example"
+                  value={network}
+                  onChange={event => setNetwork(event.target.value)}
+              >
+                <option value="H+">H+</option>
+                <option value="3G">3G</option>
+                <option value="LTE">LTE</option>
+                <option value="4G">4G</option>
+                <option value="5G">5G</option>
+              </select>
+              <div className={"form-floating"}>
+                <input type="time"
+                       className="form-control"
+                       placeholder="Time"
+                       id="timeFormControl"
+                       value={time}
+                       pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                       onChange={event => setTime(event.target.value)}
+                />
+                <label htmlFor="timeFormControl">
+                  Time
+                </label>
+              </div>
+
+              <div>
+                <label htmlFor="videoFormat" className={"m-2"}>Video format</label>
+                <div id="videoFormat" className="form-check form-check-inline">
+                  <input className="form-check-input" type="radio" name="inlineRadioOptions"
+                         id="verticalAspectRatio" value="VERTICAL"
+                         checked={videoFormat === "VERTICAL"}
+                         onChange={event => setVideoFormat(event.target.value)}/>
+                  <label className="form-check-label"
+                         htmlFor="verticalAspectRatio">Vertical</label>
                 </div>
-                <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" id="flexShowHeaderSwitch"
-                         checked={showHeaderChecked}
-                         onChange={event => setShowHeaderChecked(event.target.checked)}/>
-                  <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Show
-                    header</label>
+                <div className="form-check form-check-inline">
+                  <input className="form-check-input" type="radio" name="inlineRadioOptions"
+                         id="squareAspectRatio" value="SQUARE"
+                         checked={videoFormat === "SQUARE"}
+                         onChange={event => setVideoFormat(event.target.value)}/>
+                  <label className="form-check-label" htmlFor="squareAspectRatio">Square</label>
                 </div>
-                <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" id="flexShowPercentageSwitch"
-                         checked={showPercentageChecked}
-                         onChange={event => setShowPercentageChecked(event.target.checked)}
-                  />
-                  <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Show
-                    battery
-                    percentage</label>
-                </div>
-                <select
-                    id={"network-form"}
-                    className="form-select"
-                    aria-label="Default select example"
-                    value={network}
-                    onChange={event => setNetwork(event.target.value)}
-                >
-                  <option value="H+">H+</option>
-                  <option value="3G">3G</option>
-                  <option value="LTE">LTE</option>
-                  <option value="4G">4G</option>
-                  <option value="5G">5G</option>
-                </select>
-                <div className={"form-floating"}>
+              </div>
+              <Tab.Container id="left-tabs-example" activeKey={activeTab}
+                             onSelect={handleTabSelect}>
+                <Nav variant="tabs" className="mb-3">
+                  <Nav.Item>
+                    <Nav.Link eventKey="person1">Person 1</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="person2">Person 2</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+                <Tab.Content>
+                  <Tab.Pane eventKey="person1">
+                    <div className="form-floating">
+                      {imageMessage &&
+                          <div className={"image-preview"}>
+                            <img src={URL.createObjectURL(imageMessage)} alt="Preview"
+                                 style={{maxWidth: '250px'}}/>
+                          </div>}
+                      <textarea value={inputMessage}
+                                id="person1Textarea"
+                                className="form-control"
+                                onChange={(event) =>
+                                    setInputMessage(event.target.value)
+                                }/>
+                      <label htmlFor="person1Textarea">Message</label>
+
+                      <label className="image-upload">
+                        <input className={"image-upload"} ref={imageInputRef} type="file"
+                               accept="image/*" key={inputKey}
+                               onChange={handleImageChange}/>
+                      </label>
+                      <button className="inside-button" onClick={() => handleUploadImage()}>
+                        <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
+                        />
+                      </button>
+
+                    </div>
+                    <div>
+                      <div className="row">
+                        <div className="col">
+                          <div className="form-check">
+                            <input className="form-check-input" type="radio"
+                                   name="flexRadioSending"
+                                   id="SENDING"
+                                   checked={selectedMessageStatus === "SENDING"}
+                                   onChange={handleMessageStatusChange}
+                            />
+                            <label className="form-check-label" htmlFor="SENDING">
+                              <SendingIcon/>
+                              Sending
+                            </label>
+                          </div>
+                        </div>
+                        <div className="col">
+                          <div className="form-check">
+                            <input className="form-check-input" type="radio"
+                                   name="flexRadioSent"
+                                   id="SENT"
+                                   checked={selectedMessageStatus === "SENT"}
+                                   onChange={handleMessageStatusChange}
+                            />
+                            <label className="form-check-label" htmlFor="SENT">
+                              <SentIcon/>
+                              Sent
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col">
+                          <div className="form-check">
+                            <input className="form-check-input" type="radio"
+                                   name="flexRadioDelivered"
+                                   id="DELIVERED"
+                                   checked={selectedMessageStatus === "DELIVERED"}
+                                   onChange={handleMessageStatusChange}
+                            />
+                            <label className="form-check-label" htmlFor="DELIVERED">
+                              <DeliveredIcon/>
+                              Delivered
+                            </label>
+                          </div>
+                        </div>
+                        <div className="col">
+                          <div className="form-check">
+                            <input className="form-check-input" type="radio"
+                                   name="flexRadioSeen"
+                                   id="SEEN"
+                                   checked={selectedMessageStatus === "SEEN"}
+                                   onChange={handleMessageStatusChange}
+                            />
+                            <label className="form-check-label" htmlFor="SEEN">
+                              <SeenIcon/>
+                              Seen
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Tab.Pane>
+                  <Tab.Pane eventKey="person2">
+                    <div className="form-floating">
+                      {imageMessage &&
+                          <div className={"image-preview"}>
+                            <img src={URL.createObjectURL(imageMessage)} alt="Preview"
+                                 style={{maxWidth: '250px'}}/>
+                          </div>}
+                      <textarea value={inputMessage}
+                                id="person2Textarea"
+                                className="form-control"
+                                onChange={(event) =>
+                                    setInputMessage(event.target.value)
+                                }/>
+                      <label htmlFor="person2Textarea">Message</label>
+                      <label className="image-upload">
+                        <input className={"image-upload"} ref={imageInputRef} type="file"
+                               accept="image/*" key={inputKey}
+                               onChange={handleImageChange}/>
+                      </label>
+                      <button className="inside-button" onClick={() => handleUploadImage()}>
+                        <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
+                        />
+                      </button>
+                    </div>
+                  </Tab.Pane>
+                </Tab.Content>
+              </Tab.Container>
+              <div className={"row"}>
+                <div className={"col"}>
                   <input type="time"
                          className="form-control"
                          placeholder="Time"
-                         id="timeFormControl"
-                         value={time}
+                         id="messageTimeFormControl"
+                         value={messageTime}
                          pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                         onChange={event => setTime(event.target.value)}
+                         onChange={event => setMessageTime(event.target.value)}
                   />
-                  <label htmlFor="timeFormControl">
-                    Time
-                  </label>
                 </div>
-
-                <div>
-                  <label htmlFor="videoFormat" className={"m-2"}>Video format</label>
-                  <div id="videoFormat" className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="inlineRadioOptions"
-                           id="verticalAspectRatio" value="VERTICAL"
-                           checked={videoFormat === "VERTICAL"}
-                           onChange={event => setVideoFormat(event.target.value)}/>
-                    <label className="form-check-label"
-                           htmlFor="verticalAspectRatio">Vertical</label>
-                  </div>
-                  <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="inlineRadioOptions"
-                           id="squareAspectRatio" value="SQUARE"
-                           checked={videoFormat === "SQUARE"}
-                           onChange={event => setVideoFormat(event.target.value)}/>
-                    <label className="form-check-label" htmlFor="squareAspectRatio">Square</label>
-                  </div>
+                <div className={"col"}>
+                  <select
+                      id={"date-form"}
+                      className="form-select"
+                      aria-label="Select date"
+                      value={date}
+                      onChange={event => setDate(event.target.value)}
+                  >
+                    <option value="None">None</option>
+                    <option value="Today">Today</option>
+                    <option value="Yesterday">Yesterday</option>
+                    <option value="Other">Other date</option>
+                  </select>
+                  {date === "Other" && (
+                      <input type="date"
+                             className="form-control mt-2"
+                             placeholder="Time"
+                             value={otherDate}
+                             id="messageDateFormControl"
+                             onChange={event => {
+                               setOtherDate(event.target.value)
+                             }}
+                      />
+                  )}
                 </div>
-                <Tab.Container id="left-tabs-example" activeKey={activeTab}
-                               onSelect={handleTabSelect}>
-                  <Nav variant="tabs" className="mb-3">
-                    <Nav.Item>
-                      <Nav.Link eventKey="person1">Person 1</Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                      <Nav.Link eventKey="person2">Person 2</Nav.Link>
-                    </Nav.Item>
-                  </Nav>
-                  <Tab.Content>
-                    <Tab.Pane eventKey="person1">
-                      <div className="form-floating">
-                        {imageMessage &&
-                            <div className={"image-preview"}>
-                              <img src={URL.createObjectURL(imageMessage)} alt="Preview"
-                                   style={{maxWidth: '250px'}}/>
-                            </div>}
-                        <textarea value={inputMessage}
-                                  id="person1Textarea"
-                                  className="form-control"
-                                  onChange={(event) =>
-                                      setInputMessage(event.target.value)
-                                  }/>
-                        <label htmlFor="person1Textarea">Message</label>
+              </div>
 
-                        <label className="image-upload">
-                          <input className={"image-upload"} ref={imageInputRef} type="file"
-                                 accept="image/*" key={inputKey}
-                                 onChange={handleImageChange}/>
-                        </label>
-                        <button className="inside-button" onClick={() => handleUploadImage()}>
-                          <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
-                          />
-                        </button>
-
-                      </div>
-                      <div>
-                        <div className="row">
-                          <div className="col">
-                            <div className="form-check">
-                              <input className="form-check-input" type="radio"
-                                     name="flexRadioSending"
-                                     id="SENDING"
-                                     checked={selectedMessageStatus === "SENDING"}
-                                     onChange={handleMessageStatusChange}
-                              />
-                              <label className="form-check-label" htmlFor="SENDING">
-                                <SendingIcon/>
-                                Sending
-                              </label>
-                            </div>
-                          </div>
-                          <div className="col">
-                            <div className="form-check">
-                              <input className="form-check-input" type="radio"
-                                     name="flexRadioSent"
-                                     id="SENT"
-                                     checked={selectedMessageStatus === "SENT"}
-                                     onChange={handleMessageStatusChange}
-                              />
-                              <label className="form-check-label" htmlFor="SENT">
-                                <SentIcon/>
-                                Sent
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="row">
-                          <div className="col">
-                            <div className="form-check">
-                              <input className="form-check-input" type="radio"
-                                     name="flexRadioDelivered"
-                                     id="DELIVERED"
-                                     checked={selectedMessageStatus === "DELIVERED"}
-                                     onChange={handleMessageStatusChange}
-                              />
-                              <label className="form-check-label" htmlFor="DELIVERED">
-                                <DeliveredIcon/>
-                                Delivered
-                              </label>
-                            </div>
-                          </div>
-                          <div className="col">
-                            <div className="form-check">
-                              <input className="form-check-input" type="radio"
-                                     name="flexRadioSeen"
-                                     id="SEEN"
-                                     checked={selectedMessageStatus === "SEEN"}
-                                     onChange={handleMessageStatusChange}
-                              />
-                              <label className="form-check-label" htmlFor="SEEN">
-                                <SeenIcon/>
-                                Seen
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Tab.Pane>
-                    <Tab.Pane eventKey="person2">
-                      <div className="form-floating">
-                        {imageMessage &&
-                            <div className={"image-preview"}>
-                              <img src={URL.createObjectURL(imageMessage)} alt="Preview"
-                                   style={{maxWidth: '250px'}}/>
-                            </div>}
-                        <textarea value={inputMessage}
-                                  id="person2Textarea"
-                                  className="form-control"
-                                  onChange={(event) =>
-                                      setInputMessage(event.target.value)
-                                  }/>
-                        <label htmlFor="person2Textarea">Message</label>
-                        <label className="image-upload">
-                          <input className={"image-upload"} ref={imageInputRef} type="file"
-                                 accept="image/*" key={inputKey}
-                                 onChange={handleImageChange}/>
-                        </label>
-                        <button className="inside-button" onClick={() => handleUploadImage()}>
-                          <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
-                          />
-                        </button>
-                      </div>
-                    </Tab.Pane>
-                  </Tab.Content>
-                </Tab.Container>
-                <div className={"row"}>
-                  <div className={"col"}>
-                    <input type="time"
-                           className="form-control"
-                           placeholder="Time"
-                           id="messageTimeFormControl"
-                           value={messageTime}
-                           pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                           onChange={event => setMessageTime(event.target.value)}
-                    />
-                  </div>
-                  <div className={"col"}>
-                    <select
-                        id={"date-form"}
-                        className="form-select"
-                        aria-label="Select date"
-                        value={date}
-                        onChange={event => setDate(event.target.value)}
-                    >
-                      <option value="None">None</option>
-                      <option value="Today">Today</option>
-                      <option value="Yesterday">Yesterday</option>
-                      <option value="Other">Other date</option>
-                    </select>
-                    {date === "Other" && (
-                        <input type="date"
-                               className="form-control mt-2"
-                               placeholder="Time"
-                               value={otherDate}
-                               id="messageDateFormControl"
-                               onChange={event => {
-                                 setOtherDate(event.target.value)
-                               }}
-                        />
-                    )}
-                  </div>
-                </div>
-
-                <div className={"messages-input"}>
-                  <div className={"row px-3"}>
-                    <button className="col btn btn-success"
-                            onClick={() => {
-                              sendMessage({
-                                text: inputMessage,
-                                received: activeTab === "person2",
-                                status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
-                                imageMessage: imageMessage,
-                                displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== (activeTab === 'person2'),
-                                messageTime: messageTime,
-                                messageDate: date === 'Other' ? toDateInHumanFormat(new Date(otherDate)) : date
-                              })
-                              setImageMessage(undefined)
-                            }}>Add to conversation
-                      <FontAwesomeIcon className={"ms-2"} icon={faSquarePlus}/>
-                    </button>
-                  </div>
-                </div>
-                <div className={"row px-3 gap-2"}>
-                  <button disabled={simulateMessageOn} className="col btn btn-danger"
-                          onClick={() => clearConversation()}>Reset
-                    <FontAwesomeIcon className={"ms-2"} icon={faRotateRight}/>
-                  </button>
-                  <button disabled={simulateMessageOn} className="col btn btn-outline-primary"
+              <div className={"messages-input"}>
+                <div className={"row px-3"}>
+                  <button className="col btn btn-success"
                           onClick={() => {
-                            simulateAllChat()
-                          }
-                          }>Play
-                    <FontAwesomeIcon className={"ms-2"} icon={faPlay}></FontAwesomeIcon>
-                  </button>
-                  <button
-                      disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
-                      className="col btn btn-info"
-                      onClick={startRecording}>
-
-                    Get video
-                    {
-                      downloadingVideo ?
-                          <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                                aria-hidden="true"/> :
-                          <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
-                    }
+                            sendMessage({
+                              text: inputMessage,
+                              received: activeTab === "person2",
+                              status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
+                              imageMessage: imageMessage,
+                              displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== (activeTab === 'person2'),
+                              messageTime: messageTime,
+                              messageDate: date === 'Other' ? toDateInHumanFormat(new Date(otherDate)) : date
+                            })
+                            setImageMessage(undefined)
+                          }}>Add to conversation
+                    <FontAwesomeIcon className={"ms-2"} icon={faSquarePlus}/>
                   </button>
                 </div>
               </div>
+              <div className={"row px-3 gap-2"}>
+                <button disabled={simulateMessageOn} className="col btn btn-danger"
+                        onClick={() => clearConversation()}>Reset
+                  <FontAwesomeIcon className={"ms-2"} icon={faRotateRight}/>
+                </button>
+                <button disabled={simulateMessageOn} className="col btn btn-outline-primary"
+                        onClick={() => {
+                          simulateAllChat()
+                        }
+                        }>Play
+                  <FontAwesomeIcon className={"ms-2"} icon={faPlay}></FontAwesomeIcon>
+                </button>
+                <button
+                    disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
+                    className="col btn btn-info"
+                    onClick={startRecording}>
+
+                  Get video
+                  {
+                    downloadingVideo ?
+                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                              aria-hidden="true"/> :
+                        <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
+                  }
+                </button>
+              </div>
             </div>
-            <div className="col-md-7">
-              <div className={"chat-blurry-container box-shadow-right p-2"}>
-                <ChatContainer ref={chatRef}
-                               $videoformat={videoFormat}
-                               $blur={downloadingVideo || encodingOnProgress}>
-                  <div className={"phone-header"}>
-                    {showHeaderChecked && <div className="phone-top-bar">
-                      <span className="time">{time} am</span>
-                      <div className={"ad-container"}>
-                        <span>chat-visio.com</span>
-                      </div>
-                      <span className="network-status">
+          </div>
+          <div className="col-md-7">
+            <div className={"chat-blurry-container box-shadow-right p-2"}>
+              <ChatContainer ref={chatRef}
+                             $videoformat={videoFormat}
+                             $blur={downloadingVideo || encodingOnProgress}>
+                <div className={"phone-header"}>
+                  {showHeaderChecked && <div className="phone-top-bar">
+                    <span className="time">{time} am</span>
+                    <div className={"ad-container"}>
+                      <span>chat-visio.com</span>
+                    </div>
+                    <span className="network-status">
                   <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
-                        {showPercentageChecked && <span>50%</span>}
-                        <FontAwesomeIcon icon={faBatteryHalf}/>
+                      {showPercentageChecked && <span>50%</span>}
+                      <FontAwesomeIcon icon={faBatteryHalf}/>
             </span>
-                    </div>}
-                    <ChatHeader className="whatsapp-header" $showheader={showHeaderChecked}>
-                      <div className="pic-and-name">
+                  </div>}
+                  <ChatHeader className="whatsapp-header" $showheader={showHeaderChecked}>
+                    <div className="pic-and-name">
                         <span className={"whatsapp-actions center-icon"}>
                         <FontAwesomeIcon icon={faArrowLeft}/>
                         </span>
-                        <img className="profile-pic"
-                             src={profilePicture !== null ? URL.createObjectURL(profilePicture) : require("../../img/avatar.png")}
-                             alt="alt-profile" crossOrigin="anonymous"
-                             onClick={() => pdpState[1](true)}/>
-                        <div className="name-and-status">
-                          <span className={"name-text"}>{receiverName}</span>
-                          <span className={"status-text"}>{receiverStatus}</span>
-                        </div>
+                      <img className="profile-pic"
+                           src={profilePicture !== null ? URL.createObjectURL(profilePicture) : require("../../img/avatar.png")}
+                           alt="alt-profile" crossOrigin="anonymous"
+                           onClick={() => pdpState[1](true)}/>
+                      <div className="name-and-status">
+                        <span className={"name-text"}>{receiverName}</span>
+                        <span className={"status-text"}>{receiverStatus}</span>
                       </div>
-                      <div className="whatsapp-actions">
+                    </div>
+                    <div className="whatsapp-actions">
                     <span><FontAwesomeIcon
                         icon={faVideoCamera}/></span>
-                        <span><FontAwesomeIcon icon={faPhone}/></span>
-                        <span><FontAwesomeIcon icon={faEllipsisV}/></span>
-                      </div>
-                    </ChatHeader>
-                    {!showHeaderChecked && <div className={"ad-container"}>
-                      <span>chat-visio.com</span>
+                      <span><FontAwesomeIcon icon={faPhone}/></span>
+                      <span><FontAwesomeIcon icon={faEllipsisV}/></span>
                     </div>
-                    }
+                  </ChatHeader>
+                  {!showHeaderChecked && <div className={"ad-container"}>
+                    <span>chat-visio.com</span>
                   </div>
+                  }
+                </div>
 
-                  <div className="chat-messages chat-messages-container" id="chatMessages">
-                    {
-                      messages.slice().reverse().map((message, index) => {
-                        return (
-                            <MessageComponent
-                                key={index}
-                                index={index}
-                                message={message}
-                                updateMessage={(action, message) => updateMessage(action, index, message)}
-                                messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
-                                simulateMessageOn={simulateMessageOn}/>
-                        )
-                      })}
-                    <div ref={endOfMessagesRef}/>
-                  </div>
-                  {<div className="message-bar">
-                    <div className="message-input">
-                      <div className={"emoji-container"}>
-                        <span className={"icon-emoji center-icon"}/>
-                      </div>
-                      <span id="messageInput"
-                            ref={inputRef}
-                            className={"editable-div"}
-                            role="textbox"
-                            aria-multiline="false"
-                            data-placeholder="Type a message"
-                      >{input}
+                <div className="chat-messages chat-messages-container" id="chatMessages">
+                  {
+                    messages.slice().reverse().map((message, index) => {
+                      return (
+                          <MessageComponent
+                              key={index}
+                              index={index}
+                              message={message}
+                              updateMessage={(action, message) => updateMessage(action, index, message)}
+                              messageDisplayedState={[messageOptionsDisplayed, setMessageOptionsDisplayed]}
+                              simulateMessageOn={simulateMessageOn}/>
+                      )
+                    })}
+                  <div ref={endOfMessagesRef}/>
+                </div>
+                {<div className="message-bar">
+                  <div className="message-input">
+                    <div className={"emoji-container"}>
+                      <span className={"icon-emoji center-icon"}/>
+                    </div>
+                    <span id="messageInput"
+                          ref={inputRef}
+                          className={"editable-div"}
+                          role="textbox"
+                          aria-multiline="false"
+                          data-placeholder="Type a message"
+                    >{input}
                       </span>
-                      <div className={"right-input"}>
-                        <div className={"emoji-container"}>
-                          <span className={"icon-clip center-icon"}/>
-                        </div>
-                        <div className={"emoji-container"}>
-                          <span className={"icon-camera center-icon"}/>
-                        </div>
+                    <div className={"right-input"}>
+                      <div className={"emoji-container"}>
+                        <span className={"icon-clip center-icon"}/>
+                      </div>
+                      <div className={"emoji-container"}>
+                        <span className={"icon-camera center-icon"}/>
                       </div>
                     </div>
-                    <span className={"whatsapp-actions"}>
+                  </div>
+                  <span className={"whatsapp-actions"}>
                   <div className={"emoji-container"}>
                     {input ? <span className={"icon-right-arrow center-icon"}/> :
                         <span className={"icon-microphone center-icon"}/>}
                   </div>
                   </span>
-                  </div>}
-                </ChatContainer>
-                {downloadingVideo && (
-                    <div className="spinner-container">
-                      <div className="d-flex flex-column align-items-center">
-                        <div className="spinner-border" role="status">
-                          <span className="sr-only">Loading...</span>
-                        </div>
-                        <strong>{`Recording messages ${messages.length}/${messagesSim.current.length}`}</strong>
+                </div>}
+              </ChatContainer>
+              {downloadingVideo && (
+                  <div className="spinner-container">
+                    <div className="d-flex flex-column align-items-center">
+                      <div className="spinner-border" role="status">
+                        <span className="sr-only">Loading...</span>
                       </div>
+                      <strong>{`Recording messages ${messages.length}/${messagesSim.current.length}`}</strong>
                     </div>
-                )}
-                {encodingOnProgress && (
-                    <div className="spinner-container">
-                      <div className="d-flex flex-column align-items-center">
-                        <div className="spinner-border" role="status">
-                          <span className="sr-only">Loading...</span>
-                        </div>
-                        <strong>Encoding video {downloadProgress}%</strong>
+                  </div>
+              )}
+              {encodingOnProgress && (
+                  <div className="spinner-container">
+                    <div className="d-flex flex-column align-items-center">
+                      <div className="spinner-border" role="status">
+                        <span className="sr-only">Loading...</span>
                       </div>
+                      <strong>Encoding video {downloadProgress}%</strong>
                     </div>
-                )}
-                <div className={"generate-buttons"}>
-                  <button className="btn btn-primary" onClick={() => downloadImage()}
-                          disabled={simulateMessageOn}>Download as
-                    Image
-                    <FontAwesomeIcon className={"ms-2"} icon={faImage}/>
-                  </button>
+                  </div>
+              )}
+              <div className={"generate-buttons"}>
+                <button className="btn btn-primary" onClick={() => downloadImage()}
+                        disabled={simulateMessageOn}>Download as
+                  Image
+                  <FontAwesomeIcon className={"ms-2"} icon={faImage}/>
+                </button>
 
-                  <button
-                      disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
-                      className="btn btn-info"
-                      onClick={startRecording}>
+                <button
+                    disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
+                    className="btn btn-info"
+                    onClick={startRecording}>
 
-                    Get video
-                    {
-                      downloadingVideo ?
-                          <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                                aria-hidden="true"/> :
-                          <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
-                    }
-                  </button>
-                </div>
+                  Get video
+                  {
+                    downloadingVideo ?
+                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
+                              aria-hidden="true"/> :
+                        <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
+                  }
+                </button>
               </div>
             </div>
           </div>
