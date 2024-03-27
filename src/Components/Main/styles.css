@@ -359,6 +359,7 @@
 /**/
 .chat-blurry-container {
   position: relative;
+  overflow: auto;
 }
 
 .blur {

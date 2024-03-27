@@ -7,9 +7,11 @@ body {
 
 .app-container {
   display: flex;
+  flex-direction: column;
+  gap: 15px;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; /* This makes sure that the body is at least the height of the viewport */
+  padding: 15px;
 }
 
 .main-container {
@@ -17,6 +19,8 @@ body {
   padding: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   background-color: #FFF;
+  border-radius: 15px;
+  width: 100%;
 }
 
 

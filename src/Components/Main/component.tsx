@@ -1,14 +1,19 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {Nav, Tab} from 'react-bootstrap';
 import './styles.css'
 
 // @ts-ignore
 import html2canvas from "html2canvas";
 import {PhotoProfilModale} from "../PhotoProfilModale/component";
 import {MessageComponent} from "../MessageComponent/component";
-import {MessageActions, MessageStatus} from "../../enums/enums";
-import {Message, MessageDisplayed, ReactState} from "../../utils/types/types";
+import {MessageActions} from "../../enums/enums";
+import {
+  MAX_TYPING_DELAY,
+  Message,
+  MessageDisplayed,
+  MIN_TYPING_DELAY,
+  ReactState
+} from "../../utils/types/types";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   faArrowLeft,
@@ -18,14 +23,9 @@ import {
   faPhone,
   faSignal,
   faVideoCamera,
-  faPlay, faDownload, faSquarePlus, faRotateRight
+  faDownload
 } from "@fortawesome/free-solid-svg-icons";
 
-import {DeliveredIcon} from "../Svg/DeliveredIcon/component";
-import {SentIcon} from "../Svg/SentIcon/component";
-import {SendingIcon} from "../Svg/SendingIcon/component";
-import {SeenIcon} from "../Svg/SeenIcon/component";
-import {toDateInHumanFormat, toDateInUsFormat} from "../../utils/date/dates";
 
 // @ts-ignore
 import {FFmpeg} from "@ffmpeg/ffmpeg"
@@ -38,6 +38,10 @@ import {
   storeSessionState
 } from "../../utils/indexedDB/indexed-db";
 import {ChatContainer, ChatHeader} from "./styles";
+import {FormComponent} from "../Form/component";
+import {observer} from "mobx-react-lite";
+import {useStores} from "../../store";
+import {flushSync} from "react-dom";
 
 const ffmpeg = new FFmpeg()
 
@@ -58,7 +62,32 @@ interface VideoFrame {
 
 export const MainComponent: React.FC<{
   authModalState: ReactState<boolean>
-}> = ({authModalState}) => {
+}> = observer(({authModalState}) => {
+
+  //Store
+  const {appStore} = useStores()
+  const {
+    time,
+    setTime,
+    showPercentageChecked,
+    setShowPercentageChecked,
+    showHeaderChecked,
+    setShowHeaderChecked,
+    network,
+    setNetwork,
+    receiverName,
+    setReceiverName,
+    videoFormat,
+    messages,
+    setMessages,
+    encodingOnProgress,
+    setEncodingOnProgress,
+    simulateMessageOn,
+    setSimulateMessageOn,
+    downloadingVideo,
+    setDownloadingVideo,
+    typingSpeed
+  } = appStore
 
   const {currentUser} = useAuthState()
 
@@ -82,24 +111,16 @@ export const MainComponent: React.FC<{
 
   const startStoringChanges = useRef<boolean>(false)
 
-  const [videoFormat, setVideoFormat] = useState<string>('VERTICAL')
-  const [time, setTime] = useState<string>('')
-  const [showPercentageChecked, setShowPercentageChecked] = useState(true)
-  const [showHeaderChecked, setShowHeaderChecked] = useState(true)
-  const [network, setNetwork] = useState<string>('5G')
-  const [receiverName, setReceiverName] = useState('');
   const [profilePicture, setProfilePicture] = useState<Blob | null>(null)
-  const [messages, setMessages] = useState<Message[]>([]);
 
   const messagesSim = useRef<Message[]>([]);
 
   // Message typed by the user
-  const [inputMessage, setInputMessage] = useState<string>('')
   const [receiverStatus, setReceiverStatus] = useState<string>('Online')
 
   const isTyping = useRef<boolean>(false);
 
-  const typingSpeed = 30; // Speed in milliseconds
+  const typingDelay = Math.abs(typingSpeed - MAX_TYPING_DELAY) + MIN_TYPING_DELAY
   const delayBetweenMessages = 1000;
   const responseTime = 500;
   const delayAfterConvEnd = 2000;
@@ -107,11 +128,6 @@ export const MainComponent: React.FC<{
 
   const endOfMessagesRef = useRef(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [simulateMessageOn, setSimulateMessageOn] = useState(false)
-  const [downloadingVideo, setDownloadingVideo] = useState(false)
-  const [encodingOnProgress, setEncodingOnProgress] = useState(false)
-  const [inputKey, setInputKey] = useState(Date.now());
-
 
   //** Typing props to see ** //
   const [simulateTypingMessage, setSimulateTypingMessage] = useState<boolean>(false)
@@ -120,10 +136,6 @@ export const MainComponent: React.FC<{
   //** Typing props to see ** //
 
   const chatRef = useRef(null);
-  const [imageMessage, setImageMessage] = useState<Blob | undefined>(undefined)
-  const [selectedMessageStatus, setSelectedMessageStatus] = useState('SEEN'); // Default to the second radio
-  const [date, setDate] = useState<string>('None')
-  const [otherDate, setOtherDate] = useState<string>(toDateInUsFormat(new Date()))
 
   /*  */
   const [downloadProgress, setDownloadProgress] = useState<number>(0)
@@ -132,10 +144,6 @@ export const MainComponent: React.FC<{
   /*  */
 
   const videoFrames = useRef<VideoFrame[]>([]);
-
-  const [messageTime, setMessageTime] = useState<string>('15:11')
-  const [activeTab, setActiveTab] = useState('person1'); // default tab to the first person
-  const canvas = document.createElement('canvas');
 
   // Load sessionStorage
   useEffect(() => {
@@ -152,16 +160,6 @@ export const MainComponent: React.FC<{
     // Empty dependency array means this effect runs once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleTabSelect = (key: any) => {
-    setActiveTab(key);
-  };
-
-  const imageInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setInputKey(Date.now())
-  }, [imageMessage])
 
   // Save session
   useEffect(() => {
@@ -186,9 +184,6 @@ export const MainComponent: React.FC<{
     storeSessionState(session)
   }, [messages, network, receiverName, profilePicture, showHeaderChecked, showPercentageChecked, time, downloadingVideo, simulateMessageOn]);
 
-  const handleMessageStatusChange = (event: any) => {
-    setSelectedMessageStatus(event.target.id);
-  };
 
   const clearConversation = () => {
     setMessages([])
@@ -200,7 +195,7 @@ export const MainComponent: React.FC<{
     let newMessage = {
       received: message.received,
       status: message.status,
-      displayTail: message.displayTail,
+      displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== message.received,
       messageTime: message.messageTime,
       messageDate: message.messageDate
     } as Message;
@@ -214,10 +209,11 @@ export const MainComponent: React.FC<{
     }
     if (message.text || message.imageMessage) {
       setMessages(current => [...current, newMessage])
-      // @ts-ignore
-      setInputMessage('')
     }
-  }, [])
+
+    //TODO clear message
+
+  }, [messages, setMessages])
 
   const convertFramesToVideo = async () => {
     try {
@@ -243,7 +239,7 @@ export const MainComponent: React.FC<{
         if (timeAndDuration.frameType === FrameType.SILENT) {
           videoTime += timeAndDuration.nbFrames * delayBetweenMessages // TODO change with videoFrame.duration (refacto)
         } else if (timeAndDuration.frameType === FrameType.CHAR_TYPE) {
-          const duration = (timeAndDuration.nbFrames * typingSpeed)
+          const duration = (timeAndDuration.nbFrames * typingDelay)
           filterComplex += `;[1:a]aloop=loop=-1:size=2e+09,atrim=duration=${duration / 1000},adelay=${videoTime}|${videoTime},asetpts=N/SR/TB[aud_${index}]`
           audioMix.push(`[aud_${index}]`)
           videoTime += duration
@@ -341,7 +337,6 @@ export const MainComponent: React.FC<{
       downloadRecording(videoURL);
 
       setEncodingOnProgress(false)
-      // downloadWithProgress(videoURL)
     } catch (e) {
       console.log(e)
     }
@@ -365,6 +360,7 @@ export const MainComponent: React.FC<{
         const frame: Partial<VideoFrame> = {
           frameIndex: frameIndex.current++
         };
+
         html2canvas(chatRef.current, {
           scale: 2,
           logging: false
@@ -386,14 +382,6 @@ export const MainComponent: React.FC<{
     return false;
   };
 
-  // useEffect to capture a frame with "Typing"
-  useEffect(() => {
-    if (receiverStatus === 'Typing') {
-      captureFrameFbF(FrameType.RECEIVER_TYPING, delayBetweenMessages)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receiverStatus])
-
   // scroll to bottom in typing area
   const scrollToBottom = () => {
     inputRef.current!.scrollTop = inputRef.current!.scrollHeight;
@@ -409,7 +397,7 @@ export const MainComponent: React.FC<{
         // if not first render, captureFrame
         charIndex.current++
         if (charIndex.current !== 0) {
-          captureFrameFbF(FrameType.CHAR_TYPE, typingSpeed)
+          captureFrameFbF(FrameType.CHAR_TYPE, typingDelay)
         }
         // type next letter
         if (charIndex.current < currentMessage.text!.length) {
@@ -418,7 +406,7 @@ export const MainComponent: React.FC<{
             setInput(prev => {
               return prev + currentMessage.text![charIndex.current]
             })
-          }, typingSpeed)
+          }, typingDelay)
         } else {
           // reset charIndex
           charIndex.current = -1
@@ -436,8 +424,8 @@ export const MainComponent: React.FC<{
               messageTime: currentMessage.messageTime,
               messageDate: currentMessage.messageDate
             })
-            setInput('')
             messageSentSound.current.play()
+            setInput('')
             setCurrentMessageIndex(prev => prev + 1)
             if (currentMessageIndex === messagesSim.current.length - 1) {
               setTimeout(() => {
@@ -457,7 +445,10 @@ export const MainComponent: React.FC<{
       // functions
       const simulateReceivingMessage = (message: Message) => {
         receiverTypingSound.current.play()
-        setReceiverStatus('Typing')
+        flushSync(() => {
+          setReceiverStatus('Typing')
+        })
+        captureFrameFbF(FrameType.RECEIVER_TYPING, delayBetweenMessages)
         setTimeout(() => {
           receiverTypingSound.current.pause()
           receiverTypingSound.current.currentTime = 0;
@@ -609,13 +600,6 @@ export const MainComponent: React.FC<{
       //start animation
       setRecordedChunks([]);
       simulateAllChat();
-
-      // Set canvas dimensions
-      // @ts-ignore
-      canvas.width = chatRef.current!.offsetWidth;
-      // @ts-ignore
-      canvas.height = chatRef.current!.offsetHeight;
-
     } catch (error) {
       console.log("Error log from startRecording", error);
     }
@@ -635,16 +619,8 @@ export const MainComponent: React.FC<{
     if (parsedFrame && numberOfFrames.current) {
       setDownloadProgress(Math.min(Math.round((parsedFrame / numberOfFrames.current) * 100), 100))
     }
-
-    /*    const parsedMessage = extractTime(message)
-        if (parsedMessage && videoDuration.current) {
-          setDownloadProgress(Math.min(Math.round((parsedMessage / videoDuration.current) * 100), 100))
-        }*/
   })
-  /*    const parsedMessage = extractTime(message)
-      if (parsedMessage && videoDuration.current) {
-        setDownloadProgress(Math.min(Math.round((parsedMessage / videoDuration.current) * 100), 100))
-      }*/
+
   const getConsecutiveOccurrences = (list: FrameType[]): {
     frameType: FrameType,
     index: number,
@@ -752,309 +728,18 @@ export const MainComponent: React.FC<{
     }
   }
 
-  const handleImageChange = (e: any) => {
-    const file = e.target.files[0];
-    if (file && file.type.substr(0, 5) === 'image') {
-      setImageMessage(file)
-    }
-  };
-
-  const handleUploadImage = () => {
-    imageInputRef.current!.click();
-  }
-
   return (
       <>
         <div className="row">
           <PhotoProfilModale pdpState={pdpState}
                              setProfilePictureSrcState={[profilePicture, setProfilePicture]}/>
           <div className="col-md-5 mb-md-5">
-            <div className={"left-container box-shadow p-2"}>
-              <div className={"form-floating"}>
-                <input type="text"
-                       className="form-control"
-                       placeholder="Receiver's name"
-                       id="receiversNameFormControl"
-                       value={receiverName}
-                       onChange={(event) =>
-                           setReceiverName(event.target.value)
-                       }/>
-                <label htmlFor="receiversNameFormControl">
-                  Receiver's name
-                </label>
-              </div>
-              <div className="form-check form-switch">
-                <input className="form-check-input" type="checkbox" id="flexShowHeaderSwitch"
-                       checked={showHeaderChecked}
-                       onChange={event => setShowHeaderChecked(event.target.checked)}/>
-                <label className="form-check-label" htmlFor="flexShowHeaderSwitch">Show
-                  header</label>
-              </div>
-              <div className="form-check form-switch">
-                <input className="form-check-input" type="checkbox" id="flexShowPercentageSwitch"
-                       checked={showPercentageChecked}
-                       onChange={event => setShowPercentageChecked(event.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="flexShowPercentageSwitch">Show
-                  battery
-                  percentage</label>
-              </div>
-              <select
-                  id={"network-form"}
-                  className="form-select"
-                  aria-label="Default select example"
-                  value={network}
-                  onChange={event => setNetwork(event.target.value)}
-              >
-                <option value="H+">H+</option>
-                <option value="3G">3G</option>
-                <option value="LTE">LTE</option>
-                <option value="4G">4G</option>
-                <option value="5G">5G</option>
-              </select>
-              <div className={"form-floating"}>
-                <input type="time"
-                       className="form-control"
-                       placeholder="Time"
-                       id="timeFormControl"
-                       value={time}
-                       pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                       onChange={event => setTime(event.target.value)}
-                />
-                <label htmlFor="timeFormControl">
-                  Time
-                </label>
-              </div>
-
-              <div>
-                <label htmlFor="videoFormat" className={"m-2"}>Video format</label>
-                <div id="videoFormat" className="form-check form-check-inline">
-                  <input className="form-check-input" type="radio" name="inlineRadioOptions"
-                         id="verticalAspectRatio" value="VERTICAL"
-                         checked={videoFormat === "VERTICAL"}
-                         onChange={event => setVideoFormat(event.target.value)}/>
-                  <label className="form-check-label"
-                         htmlFor="verticalAspectRatio">Vertical</label>
-                </div>
-                <div className="form-check form-check-inline">
-                  <input className="form-check-input" type="radio" name="inlineRadioOptions"
-                         id="squareAspectRatio" value="SQUARE"
-                         checked={videoFormat === "SQUARE"}
-                         onChange={event => setVideoFormat(event.target.value)}/>
-                  <label className="form-check-label" htmlFor="squareAspectRatio">Square</label>
-                </div>
-              </div>
-              <Tab.Container id="left-tabs-example" activeKey={activeTab}
-                             onSelect={handleTabSelect}>
-                <Nav variant="tabs" className="mb-3">
-                  <Nav.Item>
-                    <Nav.Link eventKey="person1">Person 1</Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="person2">Person 2</Nav.Link>
-                  </Nav.Item>
-                </Nav>
-                <Tab.Content>
-                  <Tab.Pane eventKey="person1">
-                    <div className="form-floating">
-                      {imageMessage &&
-                          <div className={"image-preview"}>
-                            <img src={URL.createObjectURL(imageMessage)} alt="Preview"
-                                 style={{maxWidth: '250px'}}/>
-                          </div>}
-                      <textarea value={inputMessage}
-                                id="person1Textarea"
-                                className="form-control"
-                                onChange={(event) =>
-                                    setInputMessage(event.target.value)
-                                }/>
-                      <label htmlFor="person1Textarea">Message</label>
-
-                      <label className="image-upload">
-                        <input className={"image-upload"} ref={imageInputRef} type="file"
-                               accept="image/*" key={inputKey}
-                               onChange={handleImageChange}/>
-                      </label>
-                      <button className="inside-button" onClick={() => handleUploadImage()}>
-                        <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
-                        />
-                      </button>
-
-                    </div>
-                    <div>
-                      <div className="row">
-                        <div className="col">
-                          <div className="form-check">
-                            <input className="form-check-input" type="radio"
-                                   name="flexRadioSending"
-                                   id="SENDING"
-                                   checked={selectedMessageStatus === "SENDING"}
-                                   onChange={handleMessageStatusChange}
-                            />
-                            <label className="form-check-label" htmlFor="SENDING">
-                              <SendingIcon/>
-                              Sending
-                            </label>
-                          </div>
-                        </div>
-                        <div className="col">
-                          <div className="form-check">
-                            <input className="form-check-input" type="radio"
-                                   name="flexRadioSent"
-                                   id="SENT"
-                                   checked={selectedMessageStatus === "SENT"}
-                                   onChange={handleMessageStatusChange}
-                            />
-                            <label className="form-check-label" htmlFor="SENT">
-                              <SentIcon/>
-                              Sent
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="row">
-                        <div className="col">
-                          <div className="form-check">
-                            <input className="form-check-input" type="radio"
-                                   name="flexRadioDelivered"
-                                   id="DELIVERED"
-                                   checked={selectedMessageStatus === "DELIVERED"}
-                                   onChange={handleMessageStatusChange}
-                            />
-                            <label className="form-check-label" htmlFor="DELIVERED">
-                              <DeliveredIcon/>
-                              Delivered
-                            </label>
-                          </div>
-                        </div>
-                        <div className="col">
-                          <div className="form-check">
-                            <input className="form-check-input" type="radio"
-                                   name="flexRadioSeen"
-                                   id="SEEN"
-                                   checked={selectedMessageStatus === "SEEN"}
-                                   onChange={handleMessageStatusChange}
-                            />
-                            <label className="form-check-label" htmlFor="SEEN">
-                              <SeenIcon/>
-                              Seen
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Tab.Pane>
-                  <Tab.Pane eventKey="person2">
-                    <div className="form-floating">
-                      {imageMessage &&
-                          <div className={"image-preview"}>
-                            <img src={URL.createObjectURL(imageMessage)} alt="Preview"
-                                 style={{maxWidth: '250px'}}/>
-                          </div>}
-                      <textarea value={inputMessage}
-                                id="person2Textarea"
-                                className="form-control"
-                                onChange={(event) =>
-                                    setInputMessage(event.target.value)
-                                }/>
-                      <label htmlFor="person2Textarea">Message</label>
-                      <label className="image-upload">
-                        <input className={"image-upload"} ref={imageInputRef} type="file"
-                               accept="image/*" key={inputKey}
-                               onChange={handleImageChange}/>
-                      </label>
-                      <button className="inside-button" onClick={() => handleUploadImage()}>
-                        <FontAwesomeIcon icon={faImage} color={"#1cb9c8"}
-                        />
-                      </button>
-                    </div>
-                  </Tab.Pane>
-                </Tab.Content>
-              </Tab.Container>
-              <div className={"row"}>
-                <div className={"col"}>
-                  <input type="time"
-                         className="form-control"
-                         placeholder="Time"
-                         id="messageTimeFormControl"
-                         value={messageTime}
-                         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
-                         onChange={event => setMessageTime(event.target.value)}
-                  />
-                </div>
-                <div className={"col"}>
-                  <select
-                      id={"date-form"}
-                      className="form-select"
-                      aria-label="Select date"
-                      value={date}
-                      onChange={event => setDate(event.target.value)}
-                  >
-                    <option value="None">None</option>
-                    <option value="Today">Today</option>
-                    <option value="Yesterday">Yesterday</option>
-                    <option value="Other">Other date</option>
-                  </select>
-                  {date === "Other" && (
-                      <input type="date"
-                             className="form-control mt-2"
-                             placeholder="Time"
-                             value={otherDate}
-                             id="messageDateFormControl"
-                             onChange={event => {
-                               setOtherDate(event.target.value)
-                             }}
-                      />
-                  )}
-                </div>
-              </div>
-
-              <div className={"messages-input"}>
-                <div className={"row px-3"}>
-                  <button className="col btn btn-success"
-                          onClick={() => {
-                            sendMessage({
-                              text: inputMessage,
-                              received: activeTab === "person2",
-                              status: MessageStatus[selectedMessageStatus as keyof typeof MessageStatus],
-                              imageMessage: imageMessage,
-                              displayTail: messages.length === 0 ? true : messages[messages.length - 1].received !== (activeTab === 'person2'),
-                              messageTime: messageTime,
-                              messageDate: date === 'Other' ? toDateInHumanFormat(new Date(otherDate)) : date
-                            })
-                            setImageMessage(undefined)
-                          }}>Add to conversation
-                    <FontAwesomeIcon className={"ms-2"} icon={faSquarePlus}/>
-                  </button>
-                </div>
-              </div>
-              <div className={"row px-3 gap-2"}>
-                <button disabled={simulateMessageOn} className="col btn btn-danger"
-                        onClick={() => clearConversation()}>Reset
-                  <FontAwesomeIcon className={"ms-2"} icon={faRotateRight}/>
-                </button>
-                <button disabled={simulateMessageOn} className="col btn btn-outline-primary"
-                        onClick={() => {
-                          simulateAllChat()
-                        }
-                        }>Play
-                  <FontAwesomeIcon className={"ms-2"} icon={faPlay}></FontAwesomeIcon>
-                </button>
-                <button
-                    disabled={messages.length === 0 || simulateMessageOn || encodingOnProgress}
-                    className="col btn btn-info"
-                    onClick={startRecording}>
-
-                  Get video
-                  {
-                    downloadingVideo ?
-                        <span className="spinner-grow spinner-grow-sm mx-2" role="status"
-                              aria-hidden="true"/> :
-                        <FontAwesomeIcon className={"ms-2"} icon={faDownload}></FontAwesomeIcon>
-                  }
-                </button>
-              </div>
-            </div>
+            <FormComponent
+                sendMessage={sendMessage}
+                clearChat={clearConversation}
+                simulateAllChat={simulateAllChat}
+                startRecording={startRecording}
+            ></FormComponent>
           </div>
           <div className="col-md-7">
             <div className={"chat-blurry-container box-shadow-right p-2"}>
@@ -1192,4 +877,4 @@ export const MainComponent: React.FC<{
         </div>
       </>
   )
-}
+})

@@ -27,3 +27,6 @@ export interface MessageDisplayed {
   display: boolean;
   index: number;
 }
+
+export const MAX_TYPING_DELAY = 150
+export const MIN_TYPING_DELAY = 30
