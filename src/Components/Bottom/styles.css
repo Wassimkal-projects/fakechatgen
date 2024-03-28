@@ -2,67 +2,63 @@
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,600,700&display=swap');
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700,700i&display=swap');
 
-p {
-  color: #f1f1f8;
-  font: 400 0.875rem/1.375rem "Open Sans", sans-serif;
-}
-
-.p-large {
-  color: #f1f1f8;
-  font: 400 1rem/1.5rem "Open Sans", sans-serif;
-}
-
-.p-small {
-  color: #f1f1f8;
-  font: 400 0.75rem/1.25rem "Open Sans", sans-serif;
-}
-
-.p-heading {
-  margin-bottom: 3.75rem;
-  text-align: center;
-}
-
-h1 {
-  color: #f1f1f8;
-  font: 700 2.5rem/2.875rem "Montserrat", sans-serif;
-}
-
-h2 {
-  color: #f1f1f8;
-  font: 700 2.25rem/2.75rem "Montserrat", sans-serif;
-}
-
-h3 {
-  color: #f1f1f8;
-  font: 700 1.75rem/2.125rem "Montserrat", sans-serif;
-}
-
-h4 {
-  color: #f1f1f8;
-  font: 700 1.375rem/1.75rem "Montserrat", sans-serif;
-}
-
-h5 {
-  color: #f1f1f8;
-  font: 700 1.125rem/1.625rem "Montserrat", sans-serif;
-}
-
-h6 {
-  color: #f1f1f8;
-  font: 700 1rem/1.5rem "Montserrat", sans-serif;
-}
-
 .footer {
   padding-top: 5rem;
   background-color: #262431;
 }
 
-.footer .footer-col {
-  margin-bottom: 2.25rem;
+.footer p {
+  color: #f1f1f8;
+  font: 400 0.875rem/1.375rem "Open Sans", sans-serif;
+}
+
+.footer .p-large {
+  color: #f1f1f8;
+  font: 400 1rem/1.5rem "Open Sans", sans-serif;
+}
+
+.footer .p-small {
+  color: #f1f1f8;
+  font: 400 0.75rem/1.25rem "Open Sans", sans-serif;
+}
+
+.footer .p-heading {
+  margin-bottom: 3.75rem;
+  text-align: center;
+}
+
+.footer h1 {
+  color: #f1f1f8;
+  font: 700 2.5rem/2.875rem "Montserrat", sans-serif;
+}
+
+.footer h2 {
+  color: #f1f1f8;
+  font: 700 2.25rem/2.75rem "Montserrat", sans-serif;
+}
+
+.footer h3 {
+  color: #f1f1f8;
+  font: 700 1.75rem/2.125rem "Montserrat", sans-serif;
 }
 
 .footer h4 {
-  margin-bottom: 1rem;
+  color: #f1f1f8;
+  font: 700 1.375rem/1.75rem "Montserrat", sans-serif;
+  margin-bottom: 2.25rem;
+}
+
+.footer h5 {
+  color: #f1f1f8;
+  font: 700 1.125rem/1.625rem "Montserrat", sans-serif;
+}
+
+.footer h6 {
+  color: #f1f1f8;
+  font: 700 1rem/1.5rem "Montserrat", sans-serif;
+}
+
+.footer .footer-col {
 }
 
 .footer .list-unstyled .fas {

@@ -405,6 +405,40 @@ textarea {
   }
 }
 
+.battery-container {
+  display: flex;
+  flex-direction: row;
+  padding: 1px;
+}
+
+.battery-left {
+  border: 1px solid;
+  border-radius: 3px 0 0 3px;
+  width: 10px;
+  height: 12px;
+  background-color: white;
+}
+
+.battery-right {
+  border: 1px solid;
+  border-radius: 0 5px 5px 0;
+  width: 10px;
+  height: 12px;
+}
+
+.battery-pole {
+  border: 1px solid;
+  height: 5px;
+  margin-left: 1px;
+}
+
+.battery-pole-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 /**/
 @media (max-width: 800px) {
   .main-page {

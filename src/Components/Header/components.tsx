@@ -5,11 +5,10 @@ import './styles.css'
 import useAuthState from "../../hooks/auth-state-hook";
 
 const HeaderComponent = () => {
-  // const authContext = useAuth();
   const {currentUser, logout} = useAuthState()
 
   return (
-      <nav className="navbar navbar-expand-lg navbar-light bg-custom-color">
+      <nav className="navbar navbar-expand-lg navbar-light navbar-custom-custom">
         <div className="container-fluid">
           {/* Logo on the Left */}
           <a className="navbar-brand" href="/">
@@ -19,11 +18,13 @@ const HeaderComponent = () => {
           </a>
 
           {/* Toggler/Collapsible Button for Smaller Screens */}
-          <button className="navbar-toggler custom-toggler" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
-                  aria-label="Toggle navigation">
+          {currentUser && <button className="navbar-toggler custom-toggler" type="button"
+                                  data-bs-toggle="collapse"
+                                  data-bs-target="#navbarNav" aria-controls="navbarNav"
+                                  aria-expanded="false"
+                                  aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
-          </button>
+          </button>}
 
           {/* Navigation Options on the Right */}
           <div className="collapse navbar-collapse justify-content-end" id="navbarNav">

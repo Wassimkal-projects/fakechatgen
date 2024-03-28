@@ -756,7 +756,13 @@ export const MainComponent: React.FC<{
                   <span>{network}</span>
                     <FontAwesomeIcon icon={faSignal}/>
                       {showPercentageChecked && <span>50%</span>}
-                      <FontAwesomeIcon icon={faBatteryHalf}/>
+                      <div className={"battery-container"}>
+                        <div className={"battery-left"}></div>
+                        <div className={"battery-right"}></div>
+                        <div className={"battery-pole-container"}>
+                          <div className={"battery-pole"}></div>
+                        </div>
+                     </div>
             </span>
                   </div>}
                   <ChatHeader className="whatsapp-header" $showheader={showHeaderChecked}>

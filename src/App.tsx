@@ -8,6 +8,7 @@ import {BottomComponent} from "./Components/Bottom/component";
 import {StoreContext} from "./store";
 import {appStore} from "./store/appStore";
 import {FAQComponent} from "./Components/FAQ/component";
+import {GreetingComponent} from "./Components/Greeting/component";
 
 const App = () => {
 
@@ -19,7 +20,7 @@ const App = () => {
 
     <div className={"app-container"}>
       <div className={"main-container"}>
-        Turn Your Ideas into Engaging Videos!
+        <GreetingComponent></GreetingComponent>
       </div>
       <div className={"main-container"}>
         <MainComponent authModalState={authModalState}></MainComponent>
